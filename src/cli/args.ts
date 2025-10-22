@@ -2,6 +2,8 @@
  * Simple argument parsing utilities
  */
 
+import * as fs from "fs";
+
 export interface ParsedArgs {
   command: string;
   positional: string[];
@@ -18,6 +20,26 @@ export interface ParsedArgs {
     smart?: boolean;
   };
 }
+
+/**
+ * Read from stdin if available
+ * Returns trimmed content or null if no stdin
+ */
+export const readStdin = (): string | null => {
+  // Check if stdin is a TTY (interactive terminal)
+  // If it is, there's no piped input
+  if (process.stdin.isTTY) {
+    return null;
+  }
+
+  try {
+    // Read from stdin synchronously (file descriptor 0)
+    const buffer = fs.readFileSync(0, "utf-8");
+    return buffer.trim();
+  } catch {
+    return null;
+  }
+};
 
 /**
  * Parse command line arguments

@@ -60,6 +60,9 @@ jk build https://jenkins.example.com/job/MyProject/123/
 # List failed nodes (recursively traverses sub-builds by default)
 jk failures pipelines/MyProject/main/456
 
+# Pipe build number from stdin
+echo "456" | jk failures
+
 # Only inspect the specified build (no sub-builds)
 jk failures --shallow pipelines/MyProject/main/456
 
@@ -80,6 +83,9 @@ jk console pipelines/MyProject/main/456 node-123
 
 # Copy-paste Blue Ocean URLs directly from failures output
 jk console https://jenkins.example.com/blue/.../pipelines/MyProject/main/detail/main/154928/pipeline/534
+
+# Pipe URL from stdin
+echo "https://jenkins.example.com/blue/.../pipeline/534" | jk console
 
 # Pipe to other tools
 jk console <url> | grep ERROR

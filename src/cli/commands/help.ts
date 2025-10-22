@@ -90,6 +90,7 @@ ${bold("Options:")}
 ${bold("Examples:")}
   jk build pipelines/MyProject/main/123
   jk build https://jenkins.example.com/job/MyProject/123/
+  echo "pipelines/MyProject/main/123" | jk build
   jk build --verbose pipelines/MyProject/main/123
   jk build --xml pipelines/MyProject/main/123
 `);
@@ -119,6 +120,7 @@ ${bold("Options:")}
 
 ${bold("Examples:")}
   jk failures pipelines/MyProject/main/123
+  echo "123" | jk failures
   jk failures --shallow pipelines/MyProject/main/123
   jk failures --full pipelines/MyProject/main/123
   jk failures --tail 200 --xml pipelines/MyProject/main/123
@@ -162,6 +164,9 @@ ${bold("Examples:")}
   ${gray("# Blue Ocean URL (copy-paste from jk failures output):")}
   jk console https://jenkins.example.com/blue/.../pipelines/MyProject/main/detail/main/154928/pipeline/534
   jk console https://jenkins.example.com/blue/.../pipelines/MyProject/main/detail/main/154928/pipeline/534 | less
+
+  ${gray("# Pipe URL from stdin:")}
+  echo "https://jenkins.example.com/blue/.../pipeline/534" | jk console
 
 ${bold("Tip:")}
   Run ${cyan("jk failures <locator>")} to see all failed nodes with URLs,

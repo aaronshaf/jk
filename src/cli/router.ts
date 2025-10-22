@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import type { ParsedArgs } from "./args.ts";
+import { readStdin } from "./args.ts";
 import { readConfig } from "../lib/config/manager.ts";
 import { createJenkinsClient } from "../lib/jenkins/client.ts";
 import { createBuildOperations } from "../lib/jenkins/operations.ts";
@@ -40,16 +41,21 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
       const client = yield* createJenkinsClient(config);
       const operations = createBuildOperations(client, config);
 
+      // Try to read from stdin if no positional args
+      const stdinInput = args.positional.length === 0 ? readStdin() : null;
+
       // Route to specific command
       if (args.command === "build") {
-        if (args.positional.length === 0) {
+        const locator = args.positional[0] || stdinInput;
+        if (!locator) {
           console.error(red("\nError: Missing required argument <locator>\n"));
+          console.error(red("Provide via argument or pipe: echo '123' | jk build\n"));
           showHelp("build");
           process.exit(1);
         }
         return yield* buildCommand(
           operations,
-          args.positional[0],
+          locator,
           {
             verbose: args.flags.verbose,
             xml: args.flags.xml,
@@ -58,12 +64,14 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
       }
 
       if (args.command === "failures") {
-        if (args.positional.length === 0) {
+        const locator = args.positional[0] || stdinInput;
+        if (!locator) {
           console.error(red("\nError: Missing required argument <locator>\n"));
+          console.error(red("Provide via argument or pipe: echo '123' | jk failures\n"));
           showHelp("failures");
           process.exit(1);
         }
-        return yield* failuresCommand(operations, args.positional[0], {
+        return yield* failuresCommand(operations, locator, {
           full: args.flags.full,
           recursive: args.flags.recursive,
           shallow: args.flags.shallow,
@@ -77,16 +85,18 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
       }
 
       if (args.command === "console") {
-        if (args.positional.length < 1) {
+        const locator = args.positional[0] || stdinInput;
+        if (!locator) {
           console.error(
             red("\nError: Missing required argument <locator> or <node-url>\n")
           );
+          console.error(red("Provide via argument or pipe: echo 'url' | jk console\n"));
           showHelp("console");
           process.exit(1);
         }
         return yield* consoleCommand(
           operations,
-          args.positional[0],
+          locator,
           args.positional[1], // undefined if not provided
           args.flags.verbose ?? false
         );
