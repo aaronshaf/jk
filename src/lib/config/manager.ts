@@ -165,6 +165,28 @@ export const writeConfig = (
   );
 
 /**
+ * Get Jenkins URL from config or environment
+ */
+export const getJenkinsUrl = (config: Config): string => {
+  // If using env auth, check JENKINS_URL env var first
+  if (config.auth.type === "env") {
+    const envUrl = process.env.JENKINS_URL;
+    if (envUrl) {
+      return envUrl.replace(/\/$/, ""); // Remove trailing slash
+    }
+  }
+
+  // Fall back to config file
+  if (config.jenkinsUrl) {
+    return config.jenkinsUrl;
+  }
+
+  throw new Error(
+    "Jenkins URL not configured. Set JENKINS_URL environment variable or run 'jk setup'"
+  );
+};
+
+/**
  * Get the basic auth header value
  */
 export const getAuthHeader = (config: Config): string => {

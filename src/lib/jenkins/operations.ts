@@ -1,6 +1,7 @@
 import { Effect, pipe, Array as EffectArray } from "effect";
 import type { JenkinsHttpClient } from "./client.ts";
 import type { Config } from "../config/schema.ts";
+import { getJenkinsUrl } from "../config/manager.ts";
 import {
   BuildNodesResponseSchema,
   type BuildNode,
@@ -230,7 +231,7 @@ const buildFailureReport = (
                 nodeId: node.id,
                 displayName: node.displayName,
                 result: node.result!,
-                url: buildNodeWebUrl(config.jenkinsUrl, pipelineInfo, node.id),
+                url: buildNodeWebUrl(getJenkinsUrl(config), pipelineInfo, node.id),
                 consoleOutput,
               }))
             );
@@ -241,7 +242,7 @@ const buildFailureReport = (
               nodeId: node.id,
               displayName: node.displayName,
               result: node.result!,
-              url: buildNodeWebUrl(config.jenkinsUrl, pipelineInfo, node.id),
+              url: buildNodeWebUrl(getJenkinsUrl(config), pipelineInfo, node.id),
             });
           }
         }),
@@ -305,7 +306,7 @@ const buildFailureReportRecursive = (
                 nodeId: node.id,
                 displayName: node.displayName,
                 result: node.result!,
-                url: buildNodeWebUrl(config.jenkinsUrl, pipelineInfo, node.id),
+                url: buildNodeWebUrl(getJenkinsUrl(config), pipelineInfo, node.id),
                 consoleOutput,
               }))
             );
@@ -316,7 +317,7 @@ const buildFailureReportRecursive = (
               nodeId: node.id,
               displayName: node.displayName,
               result: node.result!,
-              url: buildNodeWebUrl(config.jenkinsUrl, pipelineInfo, node.id),
+              url: buildNodeWebUrl(getJenkinsUrl(config), pipelineInfo, node.id),
             });
           }
         }),

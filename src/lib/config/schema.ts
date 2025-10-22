@@ -33,12 +33,14 @@ export type Auth = Schema.Schema.Type<typeof AuthSchema>;
  * Main configuration
  */
 export const ConfigSchema = Schema.Struct({
-  jenkinsUrl: Schema.String.pipe(
-    Schema.pattern(/^https?:\/\/.+/),
-    Schema.annotations({
-      title: "Jenkins Base URL",
-      description: "Base URL of your Jenkins server (e.g., https://jenkins.example.com)",
-    })
+  jenkinsUrl: Schema.optional(
+    Schema.String.pipe(
+      Schema.pattern(/^https?:\/\/.+/),
+      Schema.annotations({
+        title: "Jenkins Base URL",
+        description: "Base URL of your Jenkins server (e.g., https://jenkins.example.com)",
+      })
+    )
   ),
   auth: AuthSchema,
 });

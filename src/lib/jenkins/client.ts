@@ -6,7 +6,7 @@ import {
   ValidationError,
 } from "../effects/errors.ts";
 import type { Config } from "../config/schema.ts";
-import { getAuthHeader } from "../config/manager.ts";
+import { getAuthHeader, getJenkinsUrl } from "../config/manager.ts";
 
 /**
  * Jenkins HTTP client for Blue Ocean REST API
@@ -74,7 +74,7 @@ export const createJenkinsClient = (
  * Build full Jenkins API URL
  */
 const buildUrl = (config: Config, path: string): string => {
-  const baseUrl = config.jenkinsUrl.replace(/\/$/, "");
+  const baseUrl = getJenkinsUrl(config);
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   return `${baseUrl}${cleanPath}`;
 };
