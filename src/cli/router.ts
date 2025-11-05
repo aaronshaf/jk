@@ -1,6 +1,5 @@
 import { Effect } from "effect";
 import type { ParsedArgs } from "./args.ts";
-import { readStdin } from "./args.ts";
 import { readConfig } from "../lib/config/manager.ts";
 import { createJenkinsClient } from "../lib/jenkins/client.ts";
 import { createBuildOperations } from "../lib/jenkins/operations.ts";
@@ -41,8 +40,8 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
       const client = yield* createJenkinsClient(config);
       const operations = createBuildOperations(client, config);
 
-      // Try to read from stdin if no positional args
-      const stdinInput = args.positional.length === 0 ? readStdin() : null;
+      // Use stdin if no positional args were provided
+      const stdinInput = args.positional.length === 0 ? args.stdin : null;
 
       // Route to specific command
       if (args.command === "build") {
