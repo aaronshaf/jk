@@ -111,6 +111,14 @@ describe("stdin behavior documentation", () => {
     expect(true).toBe(true);
   });
 
+  test("documents that empty stdin returns null", () => {
+    // readStdin() returns null for empty or whitespace-only stdin
+    // This prevents empty strings from being passed as locators
+    // Example: `echo "" | jk build` should show "Missing required argument" error
+    // Example: `command-with-no-output | jk failures` should show error, not use empty string
+    expect(true).toBe(true);
+  });
+
   test("documents stdin usage in router", () => {
     // Router uses args.stdin when args.positional.length === 0
     // This allows commands to work with: echo "123" | jk build

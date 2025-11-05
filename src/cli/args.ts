@@ -36,7 +36,9 @@ export const readStdin = (): string | null => {
   try {
     // Read from stdin synchronously (file descriptor 0)
     const buffer = fs.readFileSync(0, "utf-8");
-    return buffer.trim();
+    const trimmed = buffer.trim();
+    // Return null if stdin is empty after trimming
+    return trimmed.length > 0 ? trimmed : null;
   } catch {
     return null;
   }
