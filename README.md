@@ -38,6 +38,14 @@ bun install -g @aaronshaf/jk
 jk setup
 ```
 
+**Getting a Jenkins API Token:**
+1. Log in to Jenkins in your browser
+2. Click your username (top-right corner) → "Configure"
+3. Scroll to "API Token" section
+4. Click "Add new Token" or "Generate"
+5. Give it a name (e.g., "jk-cli") and click "Generate"
+6. Copy the token immediately (you won't be able to see it again!)
+
 **Setup options:**
 - **Direct storage**: Credentials saved to `~/.config/jk/config.json` (file permissions: 600)
 - **Environment variables**: Use `JENKINS_USERNAME` and `JENKINS_API_TOKEN` (more secure)

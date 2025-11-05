@@ -73,6 +73,15 @@ ${bold("What it does:")}
   - Prompts for API token
   - Saves configuration to ~/.config/jk/config.json
 
+${bold("Getting a Jenkins API Token:")}
+  1. Log in to Jenkins in your browser
+  2. Click your username (top-right corner)
+  3. Click "Configure"
+  4. Scroll to "API Token" section
+  5. Click "Add new Token" or "Generate"
+  6. Give it a name (e.g., "jk-cli")
+  7. Click "Generate" and copy the token immediately
+
 ${bold("Note:")}
   Your credentials are stored in plain text.
   Make sure to set appropriate file permissions (chmod 600).
