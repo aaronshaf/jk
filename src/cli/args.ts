@@ -33,15 +33,32 @@ export const readStdin = (): string | null => {
     return null;
   }
 
-  try {
-    // Read from stdin synchronously (file descriptor 0)
-    const buffer = fs.readFileSync(0, "utf-8");
-    const trimmed = buffer.trim();
-    // Return null if stdin is empty after trimming
-    return trimmed.length > 0 ? trimmed : null;
-  } catch {
-    return null;
+  // Try to read from stdin with retry on EAGAIN (non-blocking pipe race condition)
+  // In pipe chains like "cmd1 | cmd2 | jk", stdin might not be ready immediately
+  const maxRetries = 10;
+  const retryDelayMs = 10;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      // Read from stdin synchronously (file descriptor 0)
+      const buffer = fs.readFileSync(0, "utf-8");
+      const trimmed = buffer.trim();
+      // Return null if stdin is empty after trimming
+      return trimmed.length > 0 ? trimmed : null;
+    } catch (error: any) {
+      // EAGAIN means stdin isn't ready yet (non-blocking I/O)
+      // Retry after a short delay
+      if (error.code === "EAGAIN" && attempt < maxRetries - 1) {
+        // Sleep for a short time before retrying
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, retryDelayMs);
+        continue;
+      }
+      // Other errors or max retries reached
+      return null;
+    }
   }
+
+  return null;
 };
 
 /**

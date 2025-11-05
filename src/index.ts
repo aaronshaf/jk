@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { Effect } from "effect";
 import { parseArgs } from "./cli/args.ts";

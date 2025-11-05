@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "bun run src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target node --format esm",
-    "prepublishOnly": "bun run typecheck && bun test && bun run build",
+    "prepare-publish": "npm pkg set bin.jk=./dist/index.js && bun run typecheck && bun test && bun run build",
+    "prepublishOnly": "bun run prepare-publish",
     "test": "bun test",
     "test:watch": "bun test --watch",
     "typecheck": "tsc --noEmit",
