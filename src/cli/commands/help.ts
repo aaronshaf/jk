@@ -42,6 +42,12 @@ ${bold("Examples:")}
   jk failures --recursive pipelines/MyProject/main/123
   jk console pipelines/MyProject/main/123 node-456
 
+${bold("Stdin Piping:")}
+  All commands that accept a locator can read it from stdin:
+  echo "123" | jk build
+  echo "pipelines/MyProject/main/123" | jk failures
+  pbpaste | jk console
+
 ${bold("Locator Formats:")}
   Full URL:          https://jenkins.example.com/job/MyProject/123/
   Pipeline URL:      https://jenkins.example.com/.../pipelines/MyProject/runs/123
@@ -81,6 +87,7 @@ Show build information including all nodes and their status.
 
 ${bold("Usage:")}
   jk build <locator> [options]
+  echo <locator> | jk build [options]
 
 ${bold("Options:")}
   --verbose, -v      Show detailed node information
@@ -90,9 +97,13 @@ ${bold("Options:")}
 ${bold("Examples:")}
   jk build pipelines/MyProject/main/123
   jk build https://jenkins.example.com/job/MyProject/123/
-  echo "pipelines/MyProject/main/123" | jk build
   jk build --verbose pipelines/MyProject/main/123
   jk build --xml pipelines/MyProject/main/123
+
+${bold("Stdin Piping:")}
+  echo "pipelines/MyProject/main/123" | jk build
+  echo "123" | jk build
+  pbpaste | jk build --xml
 `);
 };
 
@@ -105,6 +116,7 @@ By default, recursively traverses sub-builds to find root causes.
 
 ${bold("Usage:")}
   jk failures <locator> [options]
+  echo <locator> | jk failures [options]
 
 ${bold("Options:")}
   --full             Include full console output for failures
@@ -120,13 +132,17 @@ ${bold("Options:")}
 
 ${bold("Examples:")}
   jk failures pipelines/MyProject/main/123
-  echo "123" | jk failures
   jk failures --shallow pipelines/MyProject/main/123
   jk failures --full pipelines/MyProject/main/123
   jk failures --tail 200 --xml pipelines/MyProject/main/123
   jk failures --grep "ERROR|FATAL" --xml pipelines/MyProject/main/123
   jk failures --smart --xml pipelines/MyProject/main/123
+
+${bold("Stdin Piping:")}
+  echo "123" | jk failures
+  echo "pipelines/MyProject/main/123" | jk failures --xml
   jk failures --xml pipelines/MyProject/main/123 | pbcopy
+  pbpaste | jk failures --smart --xml | pbcopy
 
 ${bold("Console Output Modes:")}
   (none)             Show failure metadata only (no console output)
@@ -151,6 +167,7 @@ Output is plain text and can be piped to other commands.
 ${bold("Usage:")}
   jk console <locator> <node-id> [options]
   jk console <blue-ocean-node-url> [options]
+  echo <url> | jk console [options]
 
 ${bold("Options:")}
   --verbose, -v      Show detailed error information
@@ -165,8 +182,11 @@ ${bold("Examples:")}
   jk console https://jenkins.example.com/blue/.../pipelines/MyProject/main/detail/main/154928/pipeline/534
   jk console https://jenkins.example.com/blue/.../pipelines/MyProject/main/detail/main/154928/pipeline/534 | less
 
+${bold("Stdin Piping:")}
   ${gray("# Pipe URL from stdin:")}
   echo "https://jenkins.example.com/blue/.../pipeline/534" | jk console
+  pbpaste | jk console | grep -i error
+  jk failures --xml pipelines/MyProject/main/123 | grep -oP 'url="\\K[^"]+' | head -1 | jk console
 
 ${bold("Tip:")}
   Run ${cyan("jk failures <locator>")} to see all failed nodes with URLs,

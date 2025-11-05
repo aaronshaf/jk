@@ -19,6 +19,7 @@ export interface ParsedArgs {
     grep?: string;
     smart?: boolean;
   };
+  stdin: string | null;
 }
 
 /**
@@ -43,6 +44,7 @@ export const readStdin = (): string | null => {
 
 /**
  * Parse command line arguments
+ * IMPORTANT: Also reads stdin synchronously at parse time to ensure it's available
  */
 export const parseArgs = (argv: string[]): ParsedArgs => {
   const [command, ...rest] = argv;
@@ -114,9 +116,14 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
     }
   }
 
+  // Read stdin synchronously at parse time (before any async operations)
+  // This ensures stdin is available even if accessed later
+  const stdin = readStdin();
+
   return {
     command: command || "help",
     positional,
     flags,
+    stdin,
   };
 };
