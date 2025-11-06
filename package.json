@@ -1,6 +1,6 @@
 {
   "name": "@aaronshaf/jk",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Fast, API-driven Jenkins CLI for inspecting builds and failures",
   "type": "module",
   "bin": {
