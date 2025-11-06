@@ -6,9 +6,32 @@
   "bin": {
     "jk": "./dist/index.js"
   },
+  "main": "./dist/lib/index.js",
+  "types": "./dist/lib/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/lib/index.js",
+      "types": "./dist/lib/index.d.ts"
+    },
+    "./jenkins": {
+      "import": "./dist/lib/jenkins/index.js",
+      "types": "./dist/lib/jenkins/index.d.ts"
+    },
+    "./config": {
+      "import": "./dist/lib/config/index.js",
+      "types": "./dist/lib/config/index.d.ts"
+    },
+    "./effects": {
+      "import": "./dist/lib/effects/index.js",
+      "types": "./dist/lib/effects/index.d.ts"
+    }
+  },
   "scripts": {
     "dev": "bun run src/index.ts",
-    "build": "bun build src/index.ts --outdir dist --target node --format esm",
+    "build": "bun run build:cli && bun run build:lib && bun run build:types",
+    "build:cli": "bun build src/index.ts --outdir dist --target node --format esm",
+    "build:lib": "bun build src/lib/index.ts src/lib/jenkins/index.ts src/lib/config/index.ts src/lib/effects/index.ts --outdir dist/lib --target node --format esm --splitting",
+    "build:types": "tsup src/lib/index.ts src/lib/jenkins/index.ts src/lib/config/index.ts src/lib/effects/index.ts --dts-only --format esm --outDir dist/lib",
     "prepare-publish": "npm pkg set bin.jk=./dist/index.js && bun run typecheck && bun test && bun run build",
     "prepublishOnly": "bun run prepare-publish",
     "test": "bun test",
@@ -49,6 +72,7 @@
   "devDependencies": {
     "@types/bun": "latest",
     "msw": "^2.6.8",
+    "tsup": "^8.5.0",
     "typescript": "^5.7.2"
   },
   "engines": {

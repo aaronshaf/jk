@@ -102,6 +102,141 @@ jk console <url> | less
 
 **Pro tip:** Run `jk failures` to see all failed nodes with URLs, then copy-paste any URL directly into `jk console`.
 
+## Programmatic Usage
+
+You can also use `jk` as a library in your Node.js or Bun projects:
+
+```bash
+# Install as a dependency
+bun add @aaronshaf/jk
+# or
+npm install @aaronshaf/jk
+```
+
+### Basic Example
+
+```typescript
+import { Effect } from "effect";
+import { createJenkinsClient, createBuildOperations, readConfig } from "@aaronshaf/jk";
+
+const program = Effect.gen(function* () {
+  // Load config from ~/.config/jk/config.json
+  const config = yield* readConfig();
+
+  // Create client and operations
+  const client = yield* createJenkinsClient(config);
+  const operations = createBuildOperations(client, config);
+
+  // Get build nodes
+  const nodes = yield* operations.getBuildNodes("pipelines/MyProject/main/123");
+
+  console.log(`Found ${nodes.length} nodes`);
+
+  // Get failed nodes
+  const failures = yield* operations.getFailedNodes("pipelines/MyProject/main/123");
+  console.log(`${failures.length} failures found`);
+});
+
+// Run the program
+Effect.runPromise(program).catch(console.error);
+```
+
+### Advanced Example with Error Handling
+
+```typescript
+import { Effect, pipe } from "effect";
+import {
+  createJenkinsClient,
+  createBuildOperations,
+  readConfig,
+  type FailureReport
+} from "@aaronshaf/jk";
+
+const analyzeFailures = (locator: string) =>
+  Effect.gen(function* () {
+    const config = yield* readConfig();
+    const client = yield* createJenkinsClient(config);
+    const operations = createBuildOperations(client, config);
+
+    // Get failure report with console output (recursive by default)
+    const failures: FailureReport[] = yield* operations.getFailureReportRecursive(
+      locator,
+      true // include full console output
+    );
+
+    // Process failures
+    for (const failure of failures) {
+      console.log(`\n${failure.displayName} (${failure.pipeline}/${failure.buildNumber})`);
+      console.log(`URL: ${failure.url}`);
+      if (failure.consoleOutput) {
+        const errorLines = failure.consoleOutput
+          .split('\n')
+          .filter(line => /error|fail|exception/i.test(line));
+        console.log(`Errors: ${errorLines.length} lines`);
+      }
+    }
+
+    return failures;
+  });
+
+// Run with error handling
+pipe(
+  analyzeFailures("pipelines/MyProject/main/456"),
+  Effect.catchAll((error) =>
+    Effect.sync(() => {
+      if (error._tag === "BuildNotFoundError") {
+        console.error("Build not found:", error.message);
+      } else if (error._tag === "AuthenticationError") {
+        console.error("Authentication failed:", error.message);
+      } else {
+        console.error("Error:", error.message);
+      }
+      process.exit(1);
+    })
+  ),
+  Effect.runPromise
+);
+```
+
+### Available Exports
+
+```typescript
+// Main exports
+import {
+  // Client
+  createJenkinsClient,
+  type JenkinsHttpClient,
+
+  // Operations
+  createBuildOperations,
+  type BuildOperations,
+
+  // Configuration
+  readConfig,
+  writeConfig,
+  createDefaultConfig,
+  type Config,
+
+  // Types
+  type BuildNode,
+  type FailureReport,
+  type PipelineInfo,
+
+  // Errors
+  NetworkError,
+  AuthenticationError,
+  BuildNotFoundError,
+  type AppError,
+} from "@aaronshaf/jk";
+
+// Subpath exports
+import { parseLocator } from "@aaronshaf/jk/jenkins";
+import { getConfigPath } from "@aaronshaf/jk/config";
+import { ValidationError } from "@aaronshaf/jk/effects";
+```
+
+See the [TypeScript declarations](./src/lib/index.ts) for the complete API.
+
 ## Key Features
 
 ### XML Output for LLMs
