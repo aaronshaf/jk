@@ -139,6 +139,11 @@ export const failuresCommand = (
           })
         );
       }
+
+      // Exit with code 1 if there are any failures, 0 if no failures
+      if (processedFailures.length > 0) {
+        process.exit(1);
+      }
     }),
     Effect.catchAll((error) =>
       Effect.sync(() => {
