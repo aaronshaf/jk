@@ -13,7 +13,8 @@ export const BuildResultSchema = Schema.Literal(
   "FAILURE",
   "UNSTABLE",
   "ABORTED",
-  "NOT_BUILT"
+  "NOT_BUILT",
+  "UNKNOWN"
 );
 export type BuildResult = Schema.Schema.Type<typeof BuildResultSchema>;
 
