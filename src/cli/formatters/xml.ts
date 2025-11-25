@@ -140,23 +140,23 @@ export const formatBuildsXml = (builds: BuildSummary[]): string => {
 
   for (const build of builds) {
     lines.push("  <build>");
-    lines.push(`    <id>${build.id}</id>`);
+    lines.push(`    <id>${escapeXml(build.id)}</id>`);
     if (build.result) {
-      lines.push(`    <result>${build.result}</result>`);
+      lines.push(`    <result>${escapeXml(build.result)}</result>`);
     }
-    lines.push(`    <state>${build.state}</state>`);
+    lines.push(`    <state>${escapeXml(build.state)}</state>`);
     if (build.startTime) {
-      lines.push(`    <startTime>${build.startTime}</startTime>`);
+      lines.push(`    <startTime>${escapeXml(build.startTime)}</startTime>`);
     }
     if (build.durationInMillis) {
       lines.push(`    <durationInMillis>${build.durationInMillis}</durationInMillis>`);
     }
-    lines.push(`    <url>${build._links.self.href}</url>`);
+    lines.push(`    <url>${escapeXml(build._links.self.href)}</url>`);
     if (build.changeSet?.length) {
       lines.push("    <changeSet>");
       for (const change of build.changeSet) {
         lines.push("      <change>");
-        lines.push(`        <commitId>${change.commitId}</commitId>`);
+        lines.push(`        <commitId>${escapeXml(change.commitId)}</commitId>`);
         lines.push(`        <message><![CDATA[${change.msg}]]></message>`);
         lines.push("      </change>");
       }
