@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { Effect } from "effect";
-import { parseLocator, parseNodeUrl } from "../src/lib/jenkins/locator.ts";
+import { parseLocator, parseNodeUrl, parseJobLocator, buildRunsApiPath } from "../src/lib/jenkins/locator.ts";
 
 describe("parseLocator", () => {
   test("parses job URL format", () => {
@@ -91,5 +91,60 @@ describe("parseNodeUrl", () => {
     );
 
     expect(result._tag).toBe("Failure");
+  });
+});
+
+describe("parseJobLocator", () => {
+  test("parses job URL format without build number", () => {
+    const result = Effect.runSync(
+      parseJobLocator("https://jenkins.example.com/job/MyProject/job/main/")
+    );
+    expect(result.path).toBe("pipelines/MyProject/main");
+  });
+
+  test("parses job URL without trailing slash", () => {
+    const result = Effect.runSync(
+      parseJobLocator("https://jenkins.example.com/job/Catalog/job/catalog-chromatic")
+    );
+    expect(result.path).toBe("pipelines/Catalog/catalog-chromatic");
+  });
+
+  test("parses pipeline path format", () => {
+    const result = Effect.runSync(
+      parseJobLocator("pipelines/MyProject/main")
+    );
+    expect(result.path).toBe("pipelines/MyProject/main");
+  });
+
+  test("parses pipeline path with trailing slash", () => {
+    const result = Effect.runSync(
+      parseJobLocator("pipelines/MyProject/main/")
+    );
+    expect(result.path).toBe("pipelines/MyProject/main");
+  });
+
+  test("rejects path traversal attempts", () => {
+    expect(() =>
+      Effect.runSync(parseJobLocator("pipelines/../etc/passwd"))
+    ).toThrow();
+  });
+
+  test("rejects invalid characters", () => {
+    expect(() =>
+      Effect.runSync(parseJobLocator("pipelines/My;Project"))
+    ).toThrow();
+  });
+
+  test("provides helpful error for invalid format", () => {
+    expect(() =>
+      Effect.runSync(parseJobLocator("invalid-format"))
+    ).toThrow(/Invalid job locator format/);
+  });
+});
+
+describe("buildRunsApiPath", () => {
+  test("builds correct API path", () => {
+    const result = buildRunsApiPath({ path: "pipelines/MyProject/main" }, 10);
+    expect(result).toBe("/blue/rest/organizations/jenkins/pipelines/MyProject/main/runs/?limit=10");
   });
 });

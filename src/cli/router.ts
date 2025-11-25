@@ -5,6 +5,7 @@ import { createJenkinsClient } from "../lib/jenkins/client.ts";
 import { createBuildOperations } from "../lib/jenkins/operations.ts";
 import { setupCommand } from "./commands/setup.ts";
 import { buildCommand } from "./commands/build.ts";
+import { buildsCommand } from "./commands/builds.ts";
 import { failuresCommand } from "./commands/failures.ts";
 import { consoleCommand } from "./commands/console.ts";
 import { showHelp } from "./commands/help.ts";
@@ -29,6 +30,7 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
   // All other commands require config
   if (
     args.command === "build" ||
+    args.command === "builds" ||
     args.command === "failures" ||
     args.command === "console"
   ) {
@@ -60,6 +62,22 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
             xml: args.flags.xml,
           }
         );
+      }
+
+      if (args.command === "builds") {
+        const locator = args.positional[0] || stdinInput;
+        if (!locator) {
+          console.error(red("\nError: Missing required argument <job-url>\n"));
+          console.error(red("Provide via argument or pipe: echo 'url' | jk builds\n"));
+          showHelp("builds");
+          process.exit(1);
+        }
+        return yield* buildsCommand(operations, locator, {
+          limit: args.flags.limit ?? 5,
+          verbose: args.flags.verbose,
+          xml: args.flags.xml,
+          urls: args.flags.urls,
+        });
       }
 
       if (args.command === "failures") {

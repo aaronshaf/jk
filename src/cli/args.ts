@@ -18,6 +18,8 @@ export interface ParsedArgs {
     tail?: number;
     grep?: string;
     smart?: boolean;
+    limit?: number;
+    urls?: boolean;
   };
   stdin: string | null;
 }
@@ -79,6 +81,8 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
     tail: undefined as number | undefined,
     grep: undefined as string | undefined,
     smart: false,
+    limit: undefined as number | undefined,
+    urls: false,
   };
 
   const positional: string[] = [];
@@ -104,6 +108,8 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         flags.help = true;
       } else if (flag === "smart") {
         flags.smart = true;
+      } else if (flag === "urls") {
+        flags.urls = true;
       } else if (flag === "tail") {
         // Next arg should be a number
         const nextArg = rest[i + 1];
@@ -120,6 +126,16 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         if (nextArg && !nextArg.startsWith("-")) {
           flags.grep = nextArg;
           i++; // Skip next arg
+        }
+      } else if (flag === "limit") {
+        // Next arg should be a number
+        const nextArg = rest[i + 1];
+        if (nextArg && !nextArg.startsWith("-")) {
+          const num = parseInt(nextArg, 10);
+          if (!isNaN(num) && num > 0) {
+            flags.limit = num;
+            i++; // Skip next arg
+          }
         }
       }
     } else if (arg.startsWith("-")) {

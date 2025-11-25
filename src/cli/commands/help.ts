@@ -8,6 +8,8 @@ export const showHelp = (command?: string): void => {
     showSetupHelp();
   } else if (command === "build") {
     showBuildHelp();
+  } else if (command === "builds") {
+    showBuildsHelp();
   } else if (command === "failures") {
     showFailuresHelp();
   } else if (command === "console") {
@@ -27,6 +29,7 @@ ${bold("Usage:")}
 ${bold("Commands:")}
   ${cyan("setup")}              Interactive setup wizard for configuration
   ${cyan("build")} <locator>     Show build information and status
+  ${cyan("builds")} <job-url>    List recent builds for a job
   ${cyan("failures")} <locator>  Show failed nodes in a build
   ${cyan("console")} <locator> <node-id>
                        Get console output for a specific node
@@ -113,6 +116,36 @@ ${bold("Stdin Piping:")}
   echo "pipelines/MyProject/main/123" | jk build
   echo "123" | jk build
   pbpaste | jk build --xml
+`);
+};
+
+const showBuildsHelp = (): void => {
+  console.log(`
+${bold("jk builds")}
+
+List recent builds for a Jenkins job.
+
+${bold("Usage:")}
+  jk builds <job-url> [options]
+  echo <job-url> | jk builds [options]
+
+${bold("Options:")}
+  --limit N          Number of builds to show (default: 5)
+  --urls             Output only URLs (one per line, for piping)
+  --xml              Output as XML (for LLM consumption)
+  --verbose, -v      Show commit info for each build
+  --help, -h         Show this help
+
+${bold("Examples:")}
+  jk builds https://jenkins.example.com/job/MyProject/
+  jk builds pipelines/MyProject/main --limit 10
+  jk builds --xml pipelines/MyProject/main
+  jk builds --urls pipelines/MyProject/main | head -1
+
+${bold("Stdin Piping:")}
+  echo "pipelines/MyProject/main" | jk builds
+  pbpaste | jk builds --xml
+  jk builds --urls <job> | xargs -I{} jk failures {}
 `);
 };
 

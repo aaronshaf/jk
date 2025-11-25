@@ -1,5 +1,4 @@
-import type { BuildNode } from "../../lib/jenkins/schemas.ts";
-import type { FailureReport } from "../../lib/jenkins/schemas.ts";
+import type { BuildNode, BuildSummary, FailureReport } from "../../lib/jenkins/schemas.ts";
 
 /**
  * XML formatting for LLM consumption
@@ -131,5 +130,42 @@ export const formatFailuresXml = (
   lines.push("  </builds>");
   lines.push("</failures>");
 
+  return lines.join("\n");
+};
+
+/**
+ * Format builds list as XML for LLM consumption
+ */
+export const formatBuildsXml = (builds: BuildSummary[]): string => {
+  const lines: string[] = ['<?xml version="1.0" encoding="UTF-8"?>', "<builds>"];
+
+  for (const build of builds) {
+    lines.push("  <build>");
+    lines.push(`    <id>${build.id}</id>`);
+    if (build.result) {
+      lines.push(`    <result>${build.result}</result>`);
+    }
+    lines.push(`    <state>${build.state}</state>`);
+    if (build.startTime) {
+      lines.push(`    <startTime>${build.startTime}</startTime>`);
+    }
+    if (build.durationInMillis) {
+      lines.push(`    <durationInMillis>${build.durationInMillis}</durationInMillis>`);
+    }
+    lines.push(`    <url>${build._links.self.href}</url>`);
+    if (build.changeSet?.length) {
+      lines.push("    <changeSet>");
+      for (const change of build.changeSet) {
+        lines.push("      <change>");
+        lines.push(`        <commitId>${change.commitId}</commitId>`);
+        lines.push(`        <message><![CDATA[${change.msg}]]></message>`);
+        lines.push("      </change>");
+      }
+      lines.push("    </changeSet>");
+    }
+    lines.push("  </build>");
+  }
+
+  lines.push("</builds>");
   return lines.join("\n");
 };
