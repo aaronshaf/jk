@@ -1,7 +1,7 @@
 import { Effect, pipe } from "effect";
 import type { BuildOperations } from "../../lib/jenkins/operations.ts";
 import { formatDuration } from "../formatters/duration.ts";
-import { formatBuildsXml } from "../formatters/xml.ts";
+import { formatBuildsXml, formatBuildsJson } from "../formatters/xml.ts";
 import { red, green, yellow, gray, bold } from "../formatters/colors.ts";
 
 /**
@@ -15,6 +15,7 @@ export const buildsCommand = (
     verbose?: boolean;
     xml?: boolean;
     urls?: boolean;
+    format?: "json" | "xml";
   }
 ): Effect.Effect<void, never> =>
   pipe(
@@ -22,9 +23,15 @@ export const buildsCommand = (
     Effect.map((builds) => {
       if (builds.length === 0) {
         if (!options.urls) {
-          console.log(
-            options.xml ? formatBuildsXml([]) : yellow("No builds found.")
-          );
+          // Determine output format (--format takes precedence over legacy --xml)
+          const outputFormat = options.format ?? (options.xml ? "xml" : "human");
+          if (outputFormat === "xml") {
+            console.log(formatBuildsXml([]));
+          } else if (outputFormat === "json") {
+            console.log(formatBuildsJson([]));
+          } else {
+            console.log(yellow("No builds found."));
+          }
         }
         return;
       }
@@ -36,8 +43,16 @@ export const buildsCommand = (
         return;
       }
 
-      if (options.xml) {
+      // Determine output format (--format takes precedence over legacy --xml)
+      const outputFormat = options.format ?? (options.xml ? "xml" : "human");
+
+      if (outputFormat === "xml") {
         console.log(formatBuildsXml(builds));
+        return;
+      }
+
+      if (outputFormat === "json") {
+        console.log(formatBuildsJson(builds));
         return;
       }
 

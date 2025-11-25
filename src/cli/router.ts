@@ -49,8 +49,8 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
       if (args.command === "build") {
         const locator = args.positional[0] || stdinInput;
         if (!locator) {
-          console.error(red("\nError: Missing required argument <locator>\n"));
-          console.error(red("Provide via argument or pipe: echo '123' | jk build\n"));
+          console.error(red("\nError: Missing required argument <build>\n"));
+          console.error(red("Provide via argument or pipe: echo 'build-url' | jk build\n"));
           showHelp("build");
           process.exit(1);
         }
@@ -67,8 +67,8 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
       if (args.command === "builds") {
         const locator = args.positional[0] || stdinInput;
         if (!locator) {
-          console.error(red("\nError: Missing required argument <job-url>\n"));
-          console.error(red("Provide via argument or pipe: echo 'url' | jk builds\n"));
+          console.error(red("\nError: Missing required argument <job>\n"));
+          console.error(red("Provide via argument or pipe: echo 'job-url' | jk builds\n"));
           showHelp("builds");
           process.exit(1);
         }
@@ -77,14 +77,15 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
           verbose: args.flags.verbose,
           xml: args.flags.xml,
           urls: args.flags.urls,
+          format: args.flags.format,
         });
       }
 
       if (args.command === "failures") {
         const locator = args.positional[0] || stdinInput;
         if (!locator) {
-          console.error(red("\nError: Missing required argument <locator>\n"));
-          console.error(red("Provide via argument or pipe: echo '123' | jk failures\n"));
+          console.error(red("\nError: Missing required argument <build>\n"));
+          console.error(red("Provide via argument or pipe: echo 'build-url' | jk failures\n"));
           showHelp("failures");
           process.exit(1);
         }
@@ -98,6 +99,7 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
           tail: args.flags.tail,
           grep: args.flags.grep,
           smart: args.flags.smart,
+          format: args.flags.format,
         });
       }
 
@@ -105,9 +107,9 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
         const locator = args.positional[0] || stdinInput;
         if (!locator) {
           console.error(
-            red("\nError: Missing required argument <locator> or <node-url>\n")
+            red("\nError: Missing required argument <build> or <node-url>\n")
           );
-          console.error(red("Provide via argument or pipe: echo 'url' | jk console\n"));
+          console.error(red("Provide via argument or pipe: echo 'node-url' | jk console\n"));
           showHelp("console");
           process.exit(1);
         }

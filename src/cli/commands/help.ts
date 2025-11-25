@@ -27,13 +27,13 @@ ${bold("Usage:")}
   jk ${cyan("<command>")} ${gray("[options]")}
 
 ${bold("Commands:")}
-  ${cyan("setup")}              Interactive setup wizard for configuration
-  ${cyan("build")} <locator>     Show build information and status
-  ${cyan("builds")} <job-url>    List recent builds for a job
-  ${cyan("failures")} <locator>  Show failed nodes in a build
-  ${cyan("console")} <locator> <node-id>
-                       Get console output for a specific node
-  ${cyan("help")} [command]      Show help for a command
+  ${cyan("setup")}                    Interactive setup wizard for configuration
+  ${cyan("build")} <build>            Show build information and status
+  ${cyan("builds")} <job>             List recent builds for a job
+  ${cyan("failures")} <build>         Show failed nodes in a build
+  ${cyan("console")} <build> <node-id>
+                              Get console output for a specific node
+  ${cyan("help")} [command]           Show help for a command
 
 ${bold("Global Options:")}
   --verbose, -v      Show detailed error information
@@ -98,8 +98,8 @@ ${bold("jk build")}
 Show build information including all nodes and their status.
 
 ${bold("Usage:")}
-  jk build <locator> [options]
-  echo <locator> | jk build [options]
+  jk build <build> [options]
+  echo <build> | jk build [options]
 
 ${bold("Options:")}
   --verbose, -v      Show detailed node information
@@ -123,28 +123,30 @@ const showBuildsHelp = (): void => {
   console.log(`
 ${bold("jk builds")}
 
-List recent builds for a Jenkins job.
+List recent builds for a Jenkins job (no build number required).
 
 ${bold("Usage:")}
-  jk builds <job-url> [options]
-  echo <job-url> | jk builds [options]
+  jk builds <job> [options]
+  echo <job> | jk builds [options]
 
 ${bold("Options:")}
-  --limit N          Number of builds to show (default: 5)
+  --limit N          Number of builds to show (default: 5, max: 100)
   --urls             Output only URLs (one per line, for piping)
-  --xml              Output as XML (for LLM consumption)
+  --format <type>    Output format: json or xml (recommended over --xml)
+  --xml              Output as XML (legacy, prefer --format xml)
   --verbose, -v      Show commit info for each build
   --help, -h         Show this help
 
 ${bold("Examples:")}
   jk builds https://jenkins.example.com/job/MyProject/
   jk builds pipelines/MyProject/main --limit 10
-  jk builds --xml pipelines/MyProject/main
+  jk builds --format xml pipelines/MyProject/main
+  jk builds --format json pipelines/MyProject/main
   jk builds --urls pipelines/MyProject/main | head -1
 
 ${bold("Stdin Piping:")}
   echo "pipelines/MyProject/main" | jk builds
-  pbpaste | jk builds --xml
+  pbpaste | jk builds --format xml
   jk builds --urls <job> | xargs -I{} jk failures {}
 `);
 };
@@ -157,8 +159,8 @@ Show failed nodes in a build with optional console output.
 By default, recursively traverses sub-builds to find root causes.
 
 ${bold("Usage:")}
-  jk failures <locator> [options]
-  echo <locator> | jk failures [options]
+  jk failures <build> [options]
+  echo <build> | jk failures [options]
 
 ${bold("Options:")}
   --full             Include full console output for failures
@@ -167,8 +169,9 @@ ${bold("Options:")}
   --tail <n>         Include last N lines of console output
   --grep <pattern>   Filter console output by pattern (case-insensitive)
   --smart            Smart mode: last 100 lines + all error/fail/exception lines
-  --json             Output as JSON
-  --xml              Output as XML (for LLM consumption)
+  --format <type>    Output format: json or xml (recommended over --json/--xml)
+  --json             Output as JSON (legacy, prefer --format json)
+  --xml              Output as XML (legacy, prefer --format xml)
   --verbose, -v      Show detailed error information
   --help, -h         Show this help
 
@@ -176,15 +179,15 @@ ${bold("Examples:")}
   jk failures pipelines/MyProject/main/123
   jk failures --shallow pipelines/MyProject/main/123
   jk failures --full pipelines/MyProject/main/123
-  jk failures --tail 200 --xml pipelines/MyProject/main/123
-  jk failures --grep "ERROR|FATAL" --xml pipelines/MyProject/main/123
-  jk failures --smart --xml pipelines/MyProject/main/123
+  jk failures --tail 200 --format xml pipelines/MyProject/main/123
+  jk failures --grep "ERROR|FATAL" --format xml pipelines/MyProject/main/123
+  jk failures --smart --format xml pipelines/MyProject/main/123
 
 ${bold("Stdin Piping:")}
   echo "123" | jk failures
-  echo "pipelines/MyProject/main/123" | jk failures --xml
-  jk failures --xml pipelines/MyProject/main/123 | pbcopy
-  pbpaste | jk failures --smart --xml | pbcopy
+  echo "pipelines/MyProject/main/123" | jk failures --format xml
+  jk failures --format xml pipelines/MyProject/main/123 | pbcopy
+  pbpaste | jk failures --smart --format xml | pbcopy
 
 ${bold("Console Output Modes:")}
   (none)             Show failure metadata only (no console output)
@@ -207,7 +210,7 @@ Get console output for a specific node in a build.
 Output is plain text and can be piped to other commands.
 
 ${bold("Usage:")}
-  jk console <locator> <node-id> [options]
+  jk console <build> <node-id> [options]
   jk console <blue-ocean-node-url> [options]
   echo <url> | jk console [options]
 
@@ -216,7 +219,7 @@ ${bold("Options:")}
   --help, -h         Show this help
 
 ${bold("Examples:")}
-  ${gray("# Traditional format (locator + node-id):")}
+  ${gray("# Traditional format (build + node-id):")}
   jk console pipelines/MyProject/main/123 node-456
   jk console pipelines/MyProject/main/123 node-456 | grep ERROR
 
@@ -228,10 +231,10 @@ ${bold("Stdin Piping:")}
   ${gray("# Pipe URL from stdin:")}
   echo "https://jenkins.example.com/blue/.../pipeline/534" | jk console
   pbpaste | jk console | grep -i error
-  jk failures --xml pipelines/MyProject/main/123 | grep -oP 'url="\\K[^"]+' | head -1 | jk console
+  jk failures --format xml pipelines/MyProject/main/123 | grep -oP 'url="\\K[^"]+' | head -1 | jk console
 
 ${bold("Tip:")}
-  Run ${cyan("jk failures <locator>")} to see all failed nodes with URLs,
+  Run ${cyan("jk failures <build>")} to see all failed nodes with URLs,
   then copy-paste any URL directly into ${cyan("jk console <url>")}
 `);
 };

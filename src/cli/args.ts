@@ -20,6 +20,7 @@ export interface ParsedArgs {
     smart?: boolean;
     limit?: number;
     urls?: boolean;
+    format?: "json" | "xml";
   };
   stdin: string | null;
 }
@@ -83,6 +84,7 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
     smart: false,
     limit: undefined as number | undefined,
     urls: false,
+    format: undefined as "json" | "xml" | undefined,
   };
 
   const positional: string[] = [];
@@ -133,9 +135,22 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         if (nextArg && !nextArg.startsWith("-")) {
           const num = parseInt(nextArg, 10);
           if (!isNaN(num) && num > 0) {
-            flags.limit = num;
+            if (num > 100) {
+              // Cap at 100 to prevent excessive API calls
+              console.warn("Warning: Limit capped at 100 to prevent excessive API calls");
+              flags.limit = 100;
+            } else {
+              flags.limit = num;
+            }
             i++; // Skip next arg
           }
+        }
+      } else if (flag === "format") {
+        // Next arg should be json or xml
+        const nextArg = rest[i + 1];
+        if (nextArg && (nextArg === "json" || nextArg === "xml")) {
+          flags.format = nextArg;
+          i++; // Skip next arg
         }
       }
     } else if (arg.startsWith("-")) {
