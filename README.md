@@ -62,6 +62,26 @@ jk build pipelines/MyProject/main/123
 jk build https://jenkins.example.com/job/MyProject/123/
 ```
 
+### List Recent Builds
+
+```bash
+# List recent builds for a job (no build number needed)
+jk builds pipelines/MyProject/main
+
+# List with full job URL
+jk builds https://jenkins.example.com/job/MyProject/
+
+# Show more builds (default: 5, max: 100)
+jk builds --limit 10 pipelines/MyProject/main
+
+# Get structured output for automation
+jk builds --format xml pipelines/MyProject/main
+jk builds --format json pipelines/MyProject/main
+
+# Output only URLs (useful for piping to other commands)
+jk builds --urls pipelines/MyProject/main | head -1 | jk failures
+```
+
 ### Inspect Failures
 
 ```bash
