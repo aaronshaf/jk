@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { InvalidLocatorError } from "../effects/errors.ts";
-import type { PipelineInfo } from "./schemas.ts";
+import type { PipelineInfo, JobInfo } from "./schemas.ts";
 
 /**
  * Parse various Jenkins locator formats into pipeline path and build number
@@ -21,6 +21,11 @@ const PIPELINE_PATH_WITH_RUNS_REGEX =
 
 // Blue Ocean node URL format: .../pipelines/Path/detail/BranchName/BuildNumber/pipeline/NodeId
 const PIPELINE_NODE_URL_REGEX = /\/pipelines\/([^/]+(?:\/[^/]+)*)\/detail\/[^/]+\/(\d+)\/pipeline\/(\d+)/;
+
+// Job locator patterns (no build number)
+const JOB_URL_NO_BUILD_REGEX = /\/job\/([^/]+(?:\/job\/[^/]+)*)\/?$/;
+const JOB_PIPELINE_URL_REGEX = /\/pipelines\/([^/]+(?:\/[^/]+)*)\/?$/;
+const JOB_PATH_REGEX = /^pipelines\/([^/]+(?:\/[^/]+)*)\/?$/;
 
 // Valid characters for pipeline path segments: alphanumeric, underscore, hyphen, dot
 const SAFE_PATH_SEGMENT_REGEX = /^[a-zA-Z0-9_.-]+$/;
@@ -156,6 +161,86 @@ export const parseLocator = (
       locator,
     })
   );
+};
+
+/**
+ * Parse a job locator string into job info (no build number)
+ */
+export const parseJobLocator = (
+  locator: string
+): Effect.Effect<JobInfo, InvalidLocatorError> => {
+  // Try to match /job/ URL format (no build number)
+  const jobMatch = locator.match(JOB_URL_NO_BUILD_REGEX);
+  if (jobMatch) {
+    const jobPath = jobMatch[1];
+    const pipelinePath = `pipelines/${jobPath.replace(/\/job\//g, "/")}`;
+
+    if (!validatePipelinePath(pipelinePath)) {
+      return Effect.fail(
+        new InvalidLocatorError({
+          message:
+            "Pipeline path contains invalid characters. Only alphanumeric, underscore, hyphen, and dot are allowed.",
+          locator,
+        })
+      );
+    }
+
+    return Effect.succeed({ path: pipelinePath });
+  }
+
+  // Try to match /pipelines/ URL format (no build number)
+  const pipelineUrlMatch = locator.match(JOB_PIPELINE_URL_REGEX);
+  if (pipelineUrlMatch) {
+    const rawPath = pipelineUrlMatch[1].replace(/\/pipelines\//g, "/");
+    const pipelinePath = `pipelines/${rawPath}`;
+
+    if (!validatePipelinePath(pipelinePath)) {
+      return Effect.fail(
+        new InvalidLocatorError({
+          message:
+            "Pipeline path contains invalid characters. Only alphanumeric, underscore, hyphen, and dot are allowed.",
+          locator,
+        })
+      );
+    }
+
+    return Effect.succeed({ path: pipelinePath });
+  }
+
+  // Try to match pipeline path format
+  const pathMatch = locator.match(JOB_PATH_REGEX);
+  if (pathMatch) {
+    const pipelinePath = `pipelines/${pathMatch[1]}`;
+
+    if (!validatePipelinePath(pipelinePath)) {
+      return Effect.fail(
+        new InvalidLocatorError({
+          message:
+            "Pipeline path contains invalid characters. Only alphanumeric, underscore, hyphen, and dot are allowed.",
+          locator,
+        })
+      );
+    }
+
+    return Effect.succeed({ path: pipelinePath });
+  }
+
+  return Effect.fail(
+    new InvalidLocatorError({
+      message: `Invalid job locator format. Expected one of:
+  - Jenkins job URL: https://jenkins.example.com/job/MyProject/
+  - Pipeline URL: https://jenkins.example.com/.../pipelines/MyProject/
+  - Pipeline path: pipelines/MyProject`,
+      locator,
+    })
+  );
+};
+
+/**
+ * Build the Blue Ocean API path for runs list
+ */
+export const buildRunsApiPath = (jobInfo: JobInfo, limit: number): string => {
+  return `/blue/rest/organizations/jenkins/${jobInfo.path}/runs/?limit=${limit}`;
 };
 
 /**

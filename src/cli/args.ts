@@ -18,6 +18,9 @@ export interface ParsedArgs {
     tail?: number;
     grep?: string;
     smart?: boolean;
+    limit?: number;
+    urls?: boolean;
+    format?: "json" | "xml";
   };
   stdin: string | null;
 }
@@ -79,6 +82,9 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
     tail: undefined as number | undefined,
     grep: undefined as string | undefined,
     smart: false,
+    limit: undefined as number | undefined,
+    urls: false,
+    format: undefined as "json" | "xml" | undefined,
   };
 
   const positional: string[] = [];
@@ -104,6 +110,8 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         flags.help = true;
       } else if (flag === "smart") {
         flags.smart = true;
+      } else if (flag === "urls") {
+        flags.urls = true;
       } else if (flag === "tail") {
         // Next arg should be a number
         const nextArg = rest[i + 1];
@@ -119,6 +127,29 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         const nextArg = rest[i + 1];
         if (nextArg && !nextArg.startsWith("-")) {
           flags.grep = nextArg;
+          i++; // Skip next arg
+        }
+      } else if (flag === "limit") {
+        // Next arg should be a number
+        const nextArg = rest[i + 1];
+        if (nextArg && !nextArg.startsWith("-")) {
+          const num = parseInt(nextArg, 10);
+          if (!isNaN(num) && num > 0) {
+            if (num > 100) {
+              // Cap at 100 to prevent excessive API calls
+              console.warn("Warning: Limit capped at 100 to prevent excessive API calls");
+              flags.limit = 100;
+            } else {
+              flags.limit = num;
+            }
+            i++; // Skip next arg
+          }
+        }
+      } else if (flag === "format") {
+        // Next arg should be json or xml
+        const nextArg = rest[i + 1];
+        if (nextArg && (nextArg === "json" || nextArg === "xml")) {
+          flags.format = nextArg;
           i++; // Skip next arg
         }
       }

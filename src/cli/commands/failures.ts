@@ -17,6 +17,7 @@ export interface FailuresOptions {
   tail?: number;
   grep?: string;
   smart?: boolean;
+  format?: "json" | "xml";
 }
 
 /**
@@ -123,13 +124,16 @@ export const failuresCommand = (
         return { ...failure, consoleOutput: processedOutput };
       });
 
-      if (options.xml) {
+      // Determine output format (--format takes precedence over legacy --json/--xml)
+      const outputFormat = options.format ?? (options.xml ? "xml" : options.json ? "json" : "human");
+
+      if (outputFormat === "xml") {
         console.log(formatFailuresXml(processedFailures, {
           tail: options.tail,
           grep: options.grep,
           smart: options.smart,
         }));
-      } else if (options.json) {
+      } else if (outputFormat === "json") {
         console.log(formatFailuresJson(processedFailures));
       } else {
         console.log(

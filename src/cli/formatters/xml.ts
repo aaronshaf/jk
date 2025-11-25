@@ -1,5 +1,4 @@
-import type { BuildNode } from "../../lib/jenkins/schemas.ts";
-import type { FailureReport } from "../../lib/jenkins/schemas.ts";
+import type { BuildNode, BuildSummary, FailureReport } from "../../lib/jenkins/schemas.ts";
 
 /**
  * XML formatting for LLM consumption
@@ -70,22 +69,21 @@ export const formatFailuresXml = (
   const mode = options.smart ? "smart" : options.tail ? "tail" : options.grep ? "grep" : "full";
   lines.push(`<failures mode="${mode}">`);
 
+  // Enhanced metadata section
+  lines.push(`  <metadata>`);
+  lines.push(`    <totalFailures>${failures.length}</totalFailures>`);
+  lines.push(`    <analysisMethod>${mode}</analysisMethod>`);
+
   if (options.tail) {
-    lines.push(`  <metadata>`);
     lines.push(`    <tailLines>${options.tail}</tailLines>`);
-    lines.push(`  </metadata>`);
   } else if (options.grep) {
-    lines.push(`  <metadata>`);
     lines.push(`    <grepPattern>${escapeXml(options.grep)}</grepPattern>`);
-    lines.push(`  </metadata>`);
   } else if (options.smart) {
-    lines.push(`  <metadata>`);
     lines.push(`    <smartMode>true</smartMode>`);
     lines.push(`    <description>Last 100 lines + all error/fail/exception/fatal lines</description>`);
-    lines.push(`  </metadata>`);
   }
 
-  lines.push(`  <count>${failures.length}</count>`);
+  lines.push(`  </metadata>`);
 
   // Group by build
   const grouped = new Map<string, FailureReport[]>();
@@ -132,4 +130,48 @@ export const formatFailuresXml = (
   lines.push("</failures>");
 
   return lines.join("\n");
+};
+
+/**
+ * Format builds list as XML for LLM consumption
+ */
+export const formatBuildsXml = (builds: BuildSummary[]): string => {
+  const lines: string[] = ['<?xml version="1.0" encoding="UTF-8"?>', "<builds>"];
+
+  for (const build of builds) {
+    lines.push("  <build>");
+    lines.push(`    <id>${escapeXml(build.id)}</id>`);
+    if (build.result) {
+      lines.push(`    <result>${escapeXml(build.result)}</result>`);
+    }
+    lines.push(`    <state>${escapeXml(build.state)}</state>`);
+    if (build.startTime) {
+      lines.push(`    <startTime>${escapeXml(build.startTime)}</startTime>`);
+    }
+    if (build.durationInMillis) {
+      lines.push(`    <durationInMillis>${build.durationInMillis}</durationInMillis>`);
+    }
+    lines.push(`    <url>${escapeXml(build._links.self.href)}</url>`);
+    if (build.changeSet?.length) {
+      lines.push("    <changeSet>");
+      for (const change of build.changeSet) {
+        lines.push("      <change>");
+        lines.push(`        <commitId>${escapeXml(change.commitId)}</commitId>`);
+        lines.push(`        <message><![CDATA[${change.msg}]]></message>`);
+        lines.push("      </change>");
+      }
+      lines.push("    </changeSet>");
+    }
+    lines.push("  </build>");
+  }
+
+  lines.push("</builds>");
+  return lines.join("\n");
+};
+
+/**
+ * Format builds list as JSON
+ */
+export const formatBuildsJson = (builds: BuildSummary[]): string => {
+  return JSON.stringify(builds, null, 2);
 };

@@ -13,7 +13,8 @@ export const BuildResultSchema = Schema.Literal(
   "FAILURE",
   "UNSTABLE",
   "ABORTED",
-  "NOT_BUILT"
+  "NOT_BUILT",
+  "UNKNOWN"
 );
 export type BuildResult = Schema.Schema.Type<typeof BuildResultSchema>;
 
@@ -109,3 +110,44 @@ export const FailureReportSchema: Schema.Schema<FailureReport> = Schema.Struct({
     Schema.Array(Schema.suspend((): Schema.Schema<FailureReport> => FailureReportSchema))
   ),
 });
+
+/**
+ * Job info (pipeline without build number)
+ */
+export const JobInfoSchema = Schema.Struct({
+  path: Schema.String,
+});
+export type JobInfo = Schema.Schema.Type<typeof JobInfoSchema>;
+
+/**
+ * Build summary from runs list endpoint
+ */
+export const BuildSummarySchema = Schema.Struct({
+  id: Schema.String,
+  result: Schema.optional(Schema.NullOr(BuildResultSchema)),
+  state: BuildStateSchema,
+  startTime: Schema.optional(Schema.NullOr(Schema.String)),
+  durationInMillis: Schema.optional(Schema.NullOr(Schema.Number)),
+  runSummary: Schema.optional(Schema.NullOr(Schema.String)),
+  _links: Schema.Struct({
+    self: Schema.Struct({
+      href: Schema.String,
+    }),
+  }),
+  changeSet: Schema.optional(
+    Schema.Array(
+      Schema.Struct({
+        commitId: Schema.String,
+        msg: Schema.String,
+      })
+    )
+  ),
+  causes: Schema.optional(
+    Schema.Array(
+      Schema.Struct({
+        shortDescription: Schema.String,
+      })
+    )
+  ),
+});
+export type BuildSummary = Schema.Schema.Type<typeof BuildSummarySchema>;

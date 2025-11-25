@@ -1,16 +1,20 @@
-import { Effect, pipe, Array as EffectArray } from "effect";
+import { Effect, pipe, Array as EffectArray, Schema } from "effect";
 import type { JenkinsHttpClient } from "./client.ts";
 import type { Config } from "../config/schema.ts";
 import { getJenkinsUrl } from "../config/manager.ts";
 import {
   BuildNodesResponseSchema,
+  BuildSummarySchema,
   type BuildNode,
+  type BuildSummary,
   type FailureReport,
   type PipelineInfo,
 } from "./schemas.ts";
 import {
   parseLocator,
+  parseJobLocator,
   buildNodesApiPath,
+  buildRunsApiPath,
   buildNodeConsoleApiPath,
   buildNodeWebUrl,
 } from "./locator.ts";
@@ -98,6 +102,20 @@ export interface BuildOperations {
     | AuthenticationError
     | ValidationError
     | BuildNotFoundError
+  >;
+
+  /**
+   * Get recent builds for a job/pipeline
+   */
+  readonly getBuilds: (
+    locator: string,
+    limit: number
+  ) => Effect.Effect<
+    BuildSummary[],
+    | InvalidLocatorError
+    | NetworkError
+    | AuthenticationError
+    | ValidationError
   >;
 }
 
@@ -193,6 +211,20 @@ export const createBuildOperations = (
           pipelineInfo,
           includeFull,
           new Set()
+        )
+      )
+    ),
+
+  getBuilds: (locator: string, limit: number) =>
+    pipe(
+      parseJobLocator(locator),
+      Effect.flatMap((jobInfo) =>
+        pipe(
+          client.getValidated(
+            buildRunsApiPath(jobInfo, limit),
+            Schema.Array(BuildSummarySchema)
+          ),
+          Effect.map((builds) => Array.from(builds))
         )
       )
     ),
