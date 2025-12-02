@@ -3,6 +3,7 @@ import type { BuildOperations } from "../../lib/jenkins/operations.ts";
 import { formatDuration } from "../formatters/duration.ts";
 import { formatBuildNodesXml } from "../formatters/xml.ts";
 import { red, green, yellow, gray, bold } from "../formatters/colors.ts";
+import { EXIT_CODES, getExitCodeForError } from "../../lib/effects/exit-codes.ts";
 
 /**
  * Build command - get build information
@@ -90,7 +91,8 @@ export const buildCommand = (
             console.error(gray(`URL: ${error.url}`));
           }
         }
-        process.exit(1);
+        const exitCode = "_tag" in error ? getExitCodeForError(error) : EXIT_CODES.INTERNAL_ERROR;
+        process.exit(exitCode);
       })
     )
   );
