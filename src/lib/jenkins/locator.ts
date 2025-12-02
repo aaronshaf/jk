@@ -27,8 +27,30 @@ const JOB_URL_NO_BUILD_REGEX = /\/job\/([^/]+(?:\/job\/[^/]+)*)\/?$/;
 const JOB_PIPELINE_URL_REGEX = /\/pipelines\/([^/]+(?:\/[^/]+)*)\/?$/;
 const JOB_PATH_REGEX = /^pipelines\/([^/]+(?:\/[^/]+)*)\/?$/;
 
-// Valid characters for pipeline path segments: alphanumeric, underscore, hyphen, dot
-const SAFE_PATH_SEGMENT_REGEX = /^[a-zA-Z0-9_.-]+$/;
+// Valid characters for pipeline path segments: alphanumeric, underscore, hyphen, dot, space
+const SAFE_PATH_SEGMENT_REGEX = /^[a-zA-Z0-9_.\- ]+$/;
+
+/**
+ * Decode URL-encoded path segments (e.g., %20 -> space)
+ * Allows pasting URLs directly from browser
+ */
+const decodePath = (path: string): string =>
+  path
+    .split("/")
+    .map((s) => {
+      try {
+        return decodeURIComponent(s);
+      } catch {
+        return s;
+      }
+    })
+    .join("/");
+
+/**
+ * Encode path segments for API URLs
+ */
+const encodePath = (path: string): string =>
+  path.split("/").map(encodeURIComponent).join("/");
 
 /**
  * Validate that a pipeline path only contains safe characters
@@ -60,7 +82,7 @@ export const parseLocator = (
   // Try to match /job/ URL format
   const jobMatch = locator.match(JOB_URL_REGEX);
   if (jobMatch) {
-    const jobPath = jobMatch[1];
+    const jobPath = decodePath(jobMatch[1]);
     const buildNumber = parseInt(jobMatch[2], 10);
     // Convert /job/Foo/job/Bar to pipelines/Foo/Bar
     const pipelinePath = `pipelines/${jobPath.replace(/\/job\//g, "/")}`;
@@ -69,7 +91,7 @@ export const parseLocator = (
     if (!validatePipelinePath(pipelinePath)) {
       return Effect.fail(
         new InvalidLocatorError({
-          message: "Pipeline path contains invalid characters. Only alphanumeric, underscore, hyphen, and dot are allowed.",
+          message: "Pipeline path contains invalid characters. Only alphanumeric, underscore, hyphen, dot, and space are allowed.",
           locator,
         })
       );
@@ -86,7 +108,7 @@ export const parseLocator = (
   if (pipelineUrlMatch) {
     // Remove all /pipelines/ prefixes that appear in the Blue Ocean API path
     // Example: "MyProject/pipelines/test-suites/pipelines/JS" -> "MyProject/test-suites/JS"
-    const rawPath = pipelineUrlMatch[1].replace(/\/pipelines\//g, "/");
+    const rawPath = decodePath(pipelineUrlMatch[1]).replace(/\/pipelines\//g, "/");
     const pipelinePath = `pipelines/${rawPath}`;
     const buildNumber = parseInt(pipelineUrlMatch[2], 10);
 
@@ -94,7 +116,7 @@ export const parseLocator = (
     if (!validatePipelinePath(pipelinePath)) {
       return Effect.fail(
         new InvalidLocatorError({
-          message: "Pipeline path contains invalid characters. Only alphanumeric, underscore, hyphen, and dot are allowed.",
+          message: "Pipeline path contains invalid characters. Only alphanumeric, underscore, hyphen, dot, and space are allowed.",
           locator,
         })
       );
@@ -109,14 +131,14 @@ export const parseLocator = (
   // Try to match pipeline path with /runs/
   const pipelineRunsMatch = locator.match(PIPELINE_PATH_WITH_RUNS_REGEX);
   if (pipelineRunsMatch) {
-    const pipelinePath = `pipelines/${pipelineRunsMatch[1]}`;
+    const pipelinePath = `pipelines/${decodePath(pipelineRunsMatch[1])}`;
     const buildNumber = parseInt(pipelineRunsMatch[2], 10);
 
     // Validate path contains only safe characters
     if (!validatePipelinePath(pipelinePath)) {
       return Effect.fail(
         new InvalidLocatorError({
-          message: "Pipeline path contains invalid characters. Only alphanumeric, underscore, hyphen, and dot are allowed.",
+          message: "Pipeline path contains invalid characters. Only alphanumeric, underscore, hyphen, dot, and space are allowed.",
           locator,
         })
       );
@@ -131,14 +153,14 @@ export const parseLocator = (
   // Try to match simple pipeline path
   const pipelinePathMatch = locator.match(PIPELINE_PATH_REGEX);
   if (pipelinePathMatch) {
-    const pipelinePath = `pipelines/${pipelinePathMatch[1]}`;
+    const pipelinePath = `pipelines/${decodePath(pipelinePathMatch[1])}`;
     const buildNumber = parseInt(pipelinePathMatch[2], 10);
 
     // Validate path contains only safe characters
     if (!validatePipelinePath(pipelinePath)) {
       return Effect.fail(
         new InvalidLocatorError({
-          message: "Pipeline path contains invalid characters. Only alphanumeric, underscore, hyphen, and dot are allowed.",
+          message: "Pipeline path contains invalid characters. Only alphanumeric, underscore, hyphen, dot, and space are allowed.",
           locator,
         })
       );
@@ -172,14 +194,14 @@ export const parseJobLocator = (
   // Try to match /job/ URL format (no build number)
   const jobMatch = locator.match(JOB_URL_NO_BUILD_REGEX);
   if (jobMatch) {
-    const jobPath = jobMatch[1];
+    const jobPath = decodePath(jobMatch[1]);
     const pipelinePath = `pipelines/${jobPath.replace(/\/job\//g, "/")}`;
 
     if (!validatePipelinePath(pipelinePath)) {
       return Effect.fail(
         new InvalidLocatorError({
           message:
-            "Pipeline path contains invalid characters. Only alphanumeric, underscore, hyphen, and dot are allowed.",
+            "Pipeline path contains invalid characters. Only alphanumeric, underscore, hyphen, dot, and space are allowed.",
           locator,
         })
       );
@@ -191,14 +213,14 @@ export const parseJobLocator = (
   // Try to match /pipelines/ URL format (no build number)
   const pipelineUrlMatch = locator.match(JOB_PIPELINE_URL_REGEX);
   if (pipelineUrlMatch) {
-    const rawPath = pipelineUrlMatch[1].replace(/\/pipelines\//g, "/");
+    const rawPath = decodePath(pipelineUrlMatch[1]).replace(/\/pipelines\//g, "/");
     const pipelinePath = `pipelines/${rawPath}`;
 
     if (!validatePipelinePath(pipelinePath)) {
       return Effect.fail(
         new InvalidLocatorError({
           message:
-            "Pipeline path contains invalid characters. Only alphanumeric, underscore, hyphen, and dot are allowed.",
+            "Pipeline path contains invalid characters. Only alphanumeric, underscore, hyphen, dot, and space are allowed.",
           locator,
         })
       );
@@ -210,13 +232,13 @@ export const parseJobLocator = (
   // Try to match pipeline path format
   const pathMatch = locator.match(JOB_PATH_REGEX);
   if (pathMatch) {
-    const pipelinePath = `pipelines/${pathMatch[1]}`;
+    const pipelinePath = `pipelines/${decodePath(pathMatch[1])}`;
 
     if (!validatePipelinePath(pipelinePath)) {
       return Effect.fail(
         new InvalidLocatorError({
           message:
-            "Pipeline path contains invalid characters. Only alphanumeric, underscore, hyphen, and dot are allowed.",
+            "Pipeline path contains invalid characters. Only alphanumeric, underscore, hyphen, dot, and space are allowed.",
           locator,
         })
       );
@@ -240,14 +262,14 @@ export const parseJobLocator = (
  * Build the Blue Ocean API path for runs list
  */
 export const buildRunsApiPath = (jobInfo: JobInfo, limit: number): string => {
-  return `/blue/rest/organizations/jenkins/${jobInfo.path}/runs/?limit=${limit}`;
+  return `/blue/rest/organizations/jenkins/${encodePath(jobInfo.path)}/runs/?limit=${limit}`;
 };
 
 /**
  * Build the Blue Ocean API path for build nodes
  */
 export const buildNodesApiPath = (pipelineInfo: PipelineInfo): string => {
-  return `/blue/rest/organizations/jenkins/${pipelineInfo.path}/runs/${pipelineInfo.buildNumber}/nodes/`;
+  return `/blue/rest/organizations/jenkins/${encodePath(pipelineInfo.path)}/runs/${pipelineInfo.buildNumber}/nodes/`;
 };
 
 /**
@@ -257,7 +279,7 @@ export const buildNodeConsoleApiPath = (
   pipelineInfo: PipelineInfo,
   nodeId: string
 ): string => {
-  return `/blue/rest/organizations/jenkins/${pipelineInfo.path}/runs/${pipelineInfo.buildNumber}/nodes/${nodeId}/log/`;
+  return `/blue/rest/organizations/jenkins/${encodePath(pipelineInfo.path)}/runs/${pipelineInfo.buildNumber}/nodes/${nodeId}/log/`;
 };
 
 /**
@@ -268,7 +290,9 @@ export const buildWebUrl = (
   pipelineInfo: PipelineInfo
 ): string => {
   const baseUrl = jenkinsBaseUrl.replace(/\/$/, "");
-  return `${baseUrl}/blue/organizations/jenkins/${pipelineInfo.path}/detail/${pipelineInfo.path.split("/").pop()}/${pipelineInfo.buildNumber}/`;
+  const encodedPath = encodePath(pipelineInfo.path);
+  const lastSegment = pipelineInfo.path.split("/").pop() || "";
+  return `${baseUrl}/blue/organizations/jenkins/${encodedPath}/detail/${encodeURIComponent(lastSegment)}/${pipelineInfo.buildNumber}/`;
 };
 
 /**
@@ -305,7 +329,7 @@ export const parseNodeUrl = (
   }
 
   // Remove all /pipelines/ prefixes that appear in the Blue Ocean API path
-  const rawPath = nodeMatch[1].replace(/\/pipelines\//g, "/");
+  const rawPath = decodePath(nodeMatch[1]).replace(/\/pipelines\//g, "/");
   const pipelinePath = `pipelines/${rawPath}`;
   const buildNumber = parseInt(nodeMatch[2], 10);
   const nodeId = nodeMatch[3];
@@ -315,7 +339,7 @@ export const parseNodeUrl = (
     return Effect.fail(
       new InvalidLocatorError({
         message:
-          "Pipeline path contains invalid characters. Only alphanumeric, underscore, hyphen, and dot are allowed.",
+          "Pipeline path contains invalid characters. Only alphanumeric, underscore, hyphen, dot, and space are allowed.",
         locator: url,
       })
     );
