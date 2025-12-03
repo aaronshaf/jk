@@ -46,6 +46,15 @@ describe("parseLocator", () => {
 
     expect(result._tag).toBe("Failure");
   });
+
+  test("parses URL-encoded job URL with spaces", () => {
+    const result = Effect.runSync(
+      parseLocator("https://jenkins.example.com/job/EDU%20Shared/job/gallery/123/")
+    );
+
+    expect(result.path).toBe("pipelines/EDU Shared/gallery");
+    expect(result.buildNumber).toBe(123);
+  });
 });
 
 describe("parseNodeUrl", () => {
@@ -146,5 +155,10 @@ describe("buildRunsApiPath", () => {
   test("builds correct API path", () => {
     const result = buildRunsApiPath({ path: "pipelines/MyProject/main" }, 10);
     expect(result).toBe("/blue/rest/organizations/jenkins/pipelines/MyProject/main/runs/?limit=10");
+  });
+
+  test("encodes spaces in path", () => {
+    const result = buildRunsApiPath({ path: "pipelines/EDU Shared/gallery" }, 10);
+    expect(result).toBe("/blue/rest/organizations/jenkins/pipelines/EDU%20Shared/gallery/runs/?limit=10");
   });
 });
