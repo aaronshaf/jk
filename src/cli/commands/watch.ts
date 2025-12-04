@@ -8,6 +8,13 @@ import { copyToClipboard } from "../../lib/platform/clipboard.ts";
 import { formatFailuresXml } from "../formatters/xml.ts";
 import { red, green, yellow, gray, cyan, bold } from "../formatters/colors.ts";
 
+// ANSI escape codes for cursor control
+const CURSOR_HOME = "\x1b[H";        // Move cursor to top-left
+const CLEAR_SCREEN = "\x1b[2J";      // Clear entire screen
+const CLEAR_TO_END = "\x1b[J";       // Clear from cursor to end of screen
+const HIDE_CURSOR = "\x1b[?25l";     // Hide cursor
+const SHOW_CURSOR = "\x1b[?25h";     // Show cursor
+
 export interface WatchOptions {
   interval?: number;
   limit?: number;
@@ -32,8 +39,26 @@ interface FailedBuild {
 // Constants
 const COUNTDOWN_UPDATE_INTERVAL_MS = 1000;
 const MAX_RECENT_FAILURES = 10;
+const INITIAL_BUILDS_TO_FETCH = 30;
 const SMART_TAIL_LINES = 100;
 const UI_REFRESH_DELAY_MS = 1500;
+
+/**
+ * Sort failures by timestamp (oldest first, newest at bottom) and trim to max limit.
+ * Modifies the array in place and returns the bounded selection index.
+ */
+const sortAndTrimFailures = (failures: FailedBuild[], currentIndex: number): number => {
+  failures.sort((a, b) => {
+    const timeA = a.build.startTime ? new Date(a.build.startTime).getTime() : 0;
+    const timeB = b.build.startTime ? new Date(b.build.startTime).getTime() : 0;
+    return timeA - timeB;
+  });
+  if (failures.length > MAX_RECENT_FAILURES) {
+    failures.splice(0, failures.length - MAX_RECENT_FAILURES);
+  }
+  // Ensure selection index is within bounds
+  return Math.max(0, Math.min(currentIndex, failures.length - 1));
+};
 
 /**
  * Watch command - monitor pipelines for failures
@@ -50,7 +75,7 @@ export const watchCommand = (
   return Effect.async<void, never>((resume) => {
     const pipelineStates: PipelineState[] = [];
     const recentFailures: FailedBuild[] = [];
-    let latestFailure: FailedBuild | null = null;
+    let selectedIndex = 0;
     let lastCheckTime: Date | null = null;
     let nextCheckTime: Date | null = null;
     let isRunning = true;
@@ -84,11 +109,23 @@ export const watchCommand = (
             poll();
           }
         } else if (key.name === "c") {
-          // Copy latest failure to clipboard
-          if (latestFailure) {
-            copyLatestFailure(latestFailure, operations);
+          // Copy selected failure to clipboard
+          if (recentFailures.length > 0 && selectedIndex < recentFailures.length) {
+            copyFailure(recentFailures[selectedIndex], operations);
           } else {
             console.log(gray("\nNo failures to copy"));
+          }
+        } else if (key.name === "up" || key.name === "k") {
+          // Move selection up
+          if (recentFailures.length > 0) {
+            selectedIndex = Math.max(0, selectedIndex - 1);
+            renderStatus();
+          }
+        } else if (key.name === "down" || key.name === "j") {
+          // Move selection down
+          if (recentFailures.length > 0) {
+            selectedIndex = Math.min(recentFailures.length - 1, selectedIndex + 1);
+            renderStatus();
           }
         }
       };
@@ -131,6 +168,8 @@ export const watchCommand = (
         process.removeListener("SIGINT", sigintHandler);
         sigintHandler = null;
       }
+      // Restore cursor visibility
+      process.stdout.write(SHOW_CURSOR);
       console.log(gray("\nStopped watching."));
     };
 
@@ -170,57 +209,96 @@ export const watchCommand = (
       return "";
     };
 
+    const formatBuildTime = (build: BuildSummary): string => {
+      if (!build.startTime) return "";
+      const date = new Date(build.startTime);
+      const now = new Date();
+      const isToday = date.toDateString() === now.toDateString();
+
+      if (isToday) {
+        // Just show time for today
+        return date.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        });
+      } else {
+        // Show date and time for older builds
+        return date.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        });
+      }
+    };
+
     const renderStatus = (): void => {
       if (options.quiet) return;
 
-      // Clear screen and move cursor to top
-      console.clear();
+      // Build output as array of lines, then write all at once
+      const lines: string[] = [];
 
-      console.log(
+      lines.push(
         bold(`Watching ${pipelineStates.length} pipeline${pipelineStates.length > 1 ? "s" : ""} (polling every ${intervalSeconds}s)`)
       );
 
       for (const state of pipelineStates) {
-        console.log(`  ${cyan("•")} ${state.displayName} ${gray(`(last: #${state.highWaterMark})`)}`);
+        lines.push(`  ${cyan("•")} ${state.displayName} ${gray(`(last: #${state.highWaterMark})`)}`);
       }
 
-      console.log();
+      lines.push("");
 
       if (lastCheckTime && nextCheckTime) {
         const secondsUntilNext = Math.max(
           0,
           Math.ceil((nextCheckTime.getTime() - Date.now()) / 1000)
         );
-        console.log(
+        lines.push(
           `Last check: ${formatTime(lastCheckTime)} ${gray("|")} Next in ${secondsUntilNext}s`
         );
       } else {
-        console.log(gray("Initializing..."));
+        lines.push(gray("Initializing..."));
       }
 
-      console.log(
-        gray(`[c] copy latest failure | [r] refresh | [q] quit`)
-      );
-      console.log();
+      lines.push(gray(`[↑/↓] select | [c] copy | [r] refresh | [q] quit`));
+      lines.push("");
 
       // Show recent failures or status message
       if (recentFailures.length > 0) {
-        console.log(gray("─".repeat(60)));
-        for (const failure of recentFailures) {
+        lines.push(gray("─".repeat(60)));
+        for (let i = 0; i < recentFailures.length; i++) {
+          const failure = recentFailures[i];
+          const isSelected = i === selectedIndex;
           const commitMsg = formatCommitMessage(failure.build);
-          console.log(
-            `${red("🔴")} ${failure.pipelineDisplayName} ${bold(`#${failure.build.id}`)}  ${gray(`"${commitMsg}"`)}`
+          const buildTime = formatBuildTime(failure.build);
+          const prefix = isSelected ? cyan("▶") : " ";
+          const timeStr = buildTime ? gray(`${buildTime}  `) : "";
+          const lineContent = `${failure.pipelineDisplayName} ${bold(`#${failure.build.id}`)}  ${timeStr}${gray(`"${commitMsg}"`)}`;
+          lines.push(
+            `${prefix} ${red("●")} ${isSelected ? bold(lineContent) : lineContent}`
           );
           for (const nodeName of failure.failedNodes) {
-            console.log(`   ${red("✗")} ${nodeName}`);
+            lines.push(`    ${red("✗")} ${nodeName}`);
           }
         }
-        console.log(gray("─".repeat(60)));
+        lines.push(gray("─".repeat(60)));
       } else if (hasPolledOnce) {
-        console.log(green("Watching for failures..."));
+        lines.push(green("Watching for failures..."));
       } else {
-        console.log(gray("Connecting..."));
+        lines.push(gray("Connecting..."));
       }
+
+      // Write all at once: move cursor home, hide cursor, write content, clear remaining, show cursor
+      process.stdout.write(
+        HIDE_CURSOR +
+        CURSOR_HOME +
+        lines.join("\n") +
+        "\n" +
+        CLEAR_TO_END +
+        SHOW_CURSOR
+      );
     };
 
     const checkPipeline = async (state: PipelineState): Promise<FailedBuild[]> => {
@@ -319,14 +397,9 @@ export const watchCommand = (
             );
           }
 
-          // Add to recent failures list (keep limited)
-          recentFailures.unshift(...allNewFailures);
-          if (recentFailures.length > MAX_RECENT_FAILURES) {
-            recentFailures.splice(MAX_RECENT_FAILURES);
-          }
-
-          // Track latest failure for clipboard copy
-          latestFailure = allNewFailures[0];
+          // Add to recent failures list, sort, trim, and reset selection to newest
+          recentFailures.push(...allNewFailures);
+          selectedIndex = sortAndTrimFailures(recentFailures, recentFailures.length - 1);
         }
 
         hasPolledOnce = true;
@@ -338,7 +411,7 @@ export const watchCommand = (
       }
     };
 
-    const copyLatestFailure = async (
+    const copyFailure = async (
       failure: FailedBuild,
       ops: BuildOperations
     ): Promise<void> => {
@@ -392,7 +465,9 @@ export const watchCommand = (
 
     // Initialize pipeline states
     const initialize = async (): Promise<void> => {
+      // Clear screen once at startup
       if (!options.quiet) {
+        process.stdout.write(CLEAR_SCREEN + CURSOR_HOME);
         console.log(gray("Initializing watch..."));
       }
 
@@ -413,10 +488,10 @@ export const watchCommand = (
           continue;
         }
 
-        // Get current builds to establish high water mark
+        // Get recent builds to establish high water mark and show initial failures
         const builds = await Effect.runPromise(
           pipe(
-            operations.getBuilds(locator, 1),
+            operations.getBuilds(locator, INITIAL_BUILDS_TO_FETCH),
             Effect.catchAll(() => Effect.succeed([] as BuildSummary[]))
           )
         );
@@ -429,7 +504,23 @@ export const watchCommand = (
           displayName,
           highWaterMark,
         });
+
+        // Collect initial failures from recent builds
+        const failedBuilds = builds.filter((b) => b.result === "FAILURE");
+        for (const build of failedBuilds) {
+          const buildLocator = `${locator.replace(/\/$/, "")}/${build.id}/`;
+          const failedNodes = await getFailedNodeNames(operations, buildLocator);
+          recentFailures.push({
+            locator: buildLocator,
+            pipelineDisplayName: displayName,
+            build,
+            failedNodes,
+          });
+        }
       }
+
+      // Sort, trim, and default selection to newest
+      selectedIndex = sortAndTrimFailures(recentFailures, recentFailures.length - 1);
 
       if (pipelineStates.length === 0) {
         console.error(red("No valid pipelines to watch"));
@@ -438,11 +529,13 @@ export const watchCommand = (
         return;
       }
 
-      // Initial render (before first poll)
-      renderStatus();
+      // Mark as polled since we've loaded initial data
+      hasPolledOnce = true;
+      lastCheckTime = new Date();
+      nextCheckTime = new Date(Date.now() + intervalMs);
 
-      // Do first poll immediately
-      await poll();
+      // Initial render
+      renderStatus();
 
       // Start polling interval
       pollIntervalId = setInterval(poll, intervalMs);
