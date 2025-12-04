@@ -132,21 +132,21 @@ ${bold("Usage:")}
 ${bold("Options:")}
   --limit N          Number of builds to show (default: 5, max: 100)
   --urls             Output only URLs (one per line, for piping)
-  --format <type>    Output format: json or xml (recommended over --xml)
-  --xml              Output as XML (legacy, prefer --format xml)
+  --xml              Output as XML (for LLM consumption)
+  --json             Output as JSON (for scripting/parsing)
   --verbose, -v      Show commit info for each build
   --help, -h         Show this help
 
 ${bold("Examples:")}
   jk builds https://jenkins.example.com/job/MyProject/
   jk builds pipelines/MyProject/main --limit 10
-  jk builds --format xml pipelines/MyProject/main
-  jk builds --format json pipelines/MyProject/main
+  jk builds --xml pipelines/MyProject/main
+  jk builds --json pipelines/MyProject/main
   jk builds --urls pipelines/MyProject/main | head -1
 
 ${bold("Stdin Piping:")}
   echo "pipelines/MyProject/main" | jk builds
-  pbpaste | jk builds --format xml
+  pbpaste | jk builds --xml
   jk builds --urls <job> | xargs -I{} jk failures {}
 `);
 };
@@ -169,9 +169,8 @@ ${bold("Options:")}
   --tail <n>         Include last N lines of console output
   --grep <pattern>   Filter console output by pattern (case-insensitive)
   --smart            Smart mode: last 100 lines + all error/fail/exception lines
-  --format <type>    Output format: json or xml (recommended over --json/--xml)
-  --json             Output as JSON (legacy, prefer --format json)
-  --xml              Output as XML (legacy, prefer --format xml)
+  --xml              Output as XML (for LLM consumption)
+  --json             Output as JSON (for scripting/parsing)
   --verbose, -v      Show detailed error information
   --help, -h         Show this help
 
@@ -179,15 +178,15 @@ ${bold("Examples:")}
   jk failures pipelines/MyProject/main/123
   jk failures --shallow pipelines/MyProject/main/123
   jk failures --full pipelines/MyProject/main/123
-  jk failures --tail 200 --format xml pipelines/MyProject/main/123
-  jk failures --grep "ERROR|FATAL" --format xml pipelines/MyProject/main/123
-  jk failures --smart --format xml pipelines/MyProject/main/123
+  jk failures --tail 200 --xml pipelines/MyProject/main/123
+  jk failures --grep "ERROR|FATAL" --xml pipelines/MyProject/main/123
+  jk failures --smart --xml pipelines/MyProject/main/123
 
 ${bold("Stdin Piping:")}
   echo "123" | jk failures
-  echo "pipelines/MyProject/main/123" | jk failures --format xml
-  jk failures --format xml pipelines/MyProject/main/123 | pbcopy
-  pbpaste | jk failures --smart --format xml | pbcopy
+  echo "pipelines/MyProject/main/123" | jk failures --xml
+  jk failures --xml pipelines/MyProject/main/123 | pbcopy
+  pbpaste | jk failures --smart --xml | pbcopy
 
 ${bold("Console Output Modes:")}
   (none)             Show failure metadata only (no console output)

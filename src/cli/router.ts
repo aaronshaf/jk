@@ -76,6 +76,7 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
           limit: args.flags.limit ?? 5,
           verbose: args.flags.verbose,
           xml: args.flags.xml,
+          json: args.flags.json,
           urls: args.flags.urls,
           format: args.flags.format,
         });

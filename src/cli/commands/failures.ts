@@ -125,8 +125,8 @@ export const failuresCommand = (
         return { ...failure, consoleOutput: processedOutput };
       });
 
-      // Determine output format (--format takes precedence over legacy --json/--xml)
-      const outputFormat = options.format ?? (options.xml ? "xml" : options.json ? "json" : "human");
+      // Determine output format (--format takes precedence, then --json/--xml flags)
+      const outputFormat = options.format ?? (options.json ? "json" : options.xml ? "xml" : "human");
 
       if (outputFormat === "xml") {
         console.log(formatFailuresXml(processedFailures, {

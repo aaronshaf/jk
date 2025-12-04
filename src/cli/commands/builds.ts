@@ -15,6 +15,7 @@ export const buildsCommand = (
     limit: number;
     verbose?: boolean;
     xml?: boolean;
+    json?: boolean;
     urls?: boolean;
     format?: "json" | "xml";
   }
@@ -22,10 +23,11 @@ export const buildsCommand = (
   pipe(
     operations.getBuilds(locator, options.limit),
     Effect.map((builds) => {
+      // Determine output format (--format takes precedence, then --json/--xml flags)
+      const outputFormat = options.format ?? (options.json ? "json" : options.xml ? "xml" : "human");
+
       if (builds.length === 0) {
         if (!options.urls) {
-          // Determine output format (--format takes precedence over legacy --xml)
-          const outputFormat = options.format ?? (options.xml ? "xml" : "human");
           if (outputFormat === "xml") {
             console.log(formatBuildsXml([]));
           } else if (outputFormat === "json") {
@@ -43,9 +45,6 @@ export const buildsCommand = (
         }
         return;
       }
-
-      // Determine output format (--format takes precedence over legacy --xml)
-      const outputFormat = options.format ?? (options.xml ? "xml" : "human");
 
       if (outputFormat === "xml") {
         console.log(formatBuildsXml(builds));
