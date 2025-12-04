@@ -14,6 +14,8 @@ export const showHelp = (command?: string): void => {
     showFailuresHelp();
   } else if (command === "console") {
     showConsoleHelp();
+  } else if (command === "watch") {
+    showWatchHelp();
   } else {
     showGeneralHelp();
   }
@@ -33,6 +35,7 @@ ${bold("Commands:")}
   ${cyan("failures")} <build>         Show failed nodes in a build
   ${cyan("console")} <build> <node-id>
                               Get console output for a specific node
+  ${cyan("watch")} <pipeline>...      Monitor pipelines for new failures
   ${cyan("help")} [command]           Show help for a command
 
 ${bold("Global Options:")}
@@ -235,5 +238,54 @@ ${bold("Stdin Piping:")}
 ${bold("Tip:")}
   Run ${cyan("jk failures <build>")} to see all failed nodes with URLs,
   then copy-paste any URL directly into ${cyan("jk console <url>")}
+`);
+};
+
+const showWatchHelp = (): void => {
+  console.log(`
+${bold("jk watch")}
+
+Monitor one or more Jenkins pipelines for new failures.
+Sends system notifications when builds fail and displays a live status.
+
+${bold("Usage:")}
+  jk watch <pipeline>... [options]
+
+${bold("Options:")}
+  --interval N       Seconds between polls (default: 60, min: 10)
+  --limit N          Number of recent builds to check (default: 20)
+  --no-notify        Disable system notifications
+  --quiet            Minimal output (no status display)
+  --help, -h         Show this help
+
+${bold("Keyboard Controls:")}
+  ${cyan("c")}    Copy latest failure (smart XML) to clipboard
+  ${cyan("r")}    Refresh immediately
+  ${cyan("q")}    Quit
+
+${bold("Examples:")}
+  ${gray("# Watch a single pipeline:")}
+  jk watch https://jenkins.example.com/job/MyProject/job/main/
+
+  ${gray("# Watch multiple pipelines:")}
+  jk watch \\
+    https://jenkins.example.com/job/Canvas/job/main-postmerge/ \\
+    https://jenkins.example.com/job/Canvas/job/nightly/
+
+  ${gray("# Custom interval (30 seconds):")}
+  jk watch --interval 30 https://jenkins.example.com/job/MyProject/
+
+  ${gray("# Silent mode (notifications only):")}
+  jk watch --quiet https://jenkins.example.com/job/MyProject/
+
+${bold("Behavior:")}
+  - On startup, records the latest build ID for each pipeline
+  - Only alerts on NEW failures (builds that fail after watch starts)
+  - Press ${cyan("c")} to copy the latest failure's smart analysis to clipboard
+    (equivalent to ${cyan("jk failures --smart --xml")})
+
+${bold("Notifications:")}
+  - macOS: Native notifications via osascript (with sound)
+  - Linux: notify-send (requires libnotify)
 `);
 };
