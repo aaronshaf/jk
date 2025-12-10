@@ -8,6 +8,7 @@ import { buildCommand } from "./commands/build.ts";
 import { buildsCommand } from "./commands/builds.ts";
 import { failuresCommand } from "./commands/failures.ts";
 import { consoleCommand } from "./commands/console.ts";
+import { watchCommand } from "./commands/watch.ts";
 import { showHelp } from "./commands/help.ts";
 import { red } from "./formatters/colors.ts";
 import type { AppError } from "../lib/effects/errors.ts";
@@ -32,7 +33,8 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
     args.command === "build" ||
     args.command === "builds" ||
     args.command === "failures" ||
-    args.command === "console"
+    args.command === "console" ||
+    args.command === "watch"
   ) {
     return Effect.gen(function* () {
       // Load config - let errors propagate
@@ -76,6 +78,7 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
           limit: args.flags.limit ?? 5,
           verbose: args.flags.verbose,
           xml: args.flags.xml,
+          json: args.flags.json,
           urls: args.flags.urls,
           format: args.flags.format,
         });
@@ -119,6 +122,30 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
           args.positional[1], // undefined if not provided
           args.flags.verbose ?? false
         );
+      }
+
+      if (args.command === "watch") {
+        // Watch can accept multiple locators
+        const locators = args.positional.length > 0
+          ? args.positional
+          : stdinInput
+          ? [stdinInput]
+          : [];
+
+        if (locators.length === 0) {
+          console.error(red("\nError: Missing required argument <pipeline>...\n"));
+          console.error(red("Provide one or more pipeline URLs to watch.\n"));
+          showHelp("watch");
+          process.exit(1);
+        }
+
+        return yield* watchCommand(operations, locators, {
+          interval: args.flags.interval,
+          limit: args.flags.limit,
+          noNotify: args.flags.noNotify,
+          quiet: args.flags.quiet,
+          verbose: args.flags.verbose,
+        });
       }
     });
   }

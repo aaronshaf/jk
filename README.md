@@ -122,6 +122,37 @@ jk console <url> | less
 
 **Pro tip:** Run `jk failures` to see all failed nodes with URLs, then copy-paste any URL directly into `jk console`.
 
+### Watch for Failures
+
+Monitor one or more pipelines for new failures with live notifications:
+
+```bash
+# Watch a single pipeline
+jk watch https://jenkins.example.com/job/MyProject/job/main/
+
+# Watch multiple pipelines
+jk watch \
+  https://jenkins.example.com/job/MyProject/job/main/ \
+  https://jenkins.example.com/job/MyProject/job/nightly/
+
+# Custom poll interval (default: 60s)
+jk watch --interval 30 https://jenkins.example.com/job/MyProject/
+
+# Quiet mode (notifications only, no terminal UI)
+jk watch --quiet https://jenkins.example.com/job/MyProject/
+```
+
+**Keyboard controls:**
+- `c` - Copy latest failure's smart XML analysis to clipboard
+- `r` - Refresh immediately
+- `q` - Quit
+
+**Features:**
+- System notifications when builds fail (macOS/Linux)
+- Live countdown timer until next check
+- Press `c` to copy failure details (same as `jk failures --smart --xml`)
+- Only alerts on NEW failures (after watch starts)
+
 ## Programmatic Usage
 
 You can also use `jk` as a library in your Node.js or Bun projects:

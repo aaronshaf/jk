@@ -14,6 +14,8 @@ export const showHelp = (command?: string): void => {
     showFailuresHelp();
   } else if (command === "console") {
     showConsoleHelp();
+  } else if (command === "watch") {
+    showWatchHelp();
   } else {
     showGeneralHelp();
   }
@@ -33,6 +35,7 @@ ${bold("Commands:")}
   ${cyan("failures")} <build>         Show failed nodes in a build
   ${cyan("console")} <build> <node-id>
                               Get console output for a specific node
+  ${cyan("watch")} <pipeline>...      Monitor pipelines for new failures
   ${cyan("help")} [command]           Show help for a command
 
 ${bold("Global Options:")}
@@ -132,21 +135,21 @@ ${bold("Usage:")}
 ${bold("Options:")}
   --limit N          Number of builds to show (default: 5, max: 100)
   --urls             Output only URLs (one per line, for piping)
-  --format <type>    Output format: json or xml (recommended over --xml)
-  --xml              Output as XML (legacy, prefer --format xml)
+  --xml              Output as XML (for LLM consumption)
+  --json             Output as JSON (for scripting/parsing)
   --verbose, -v      Show commit info for each build
   --help, -h         Show this help
 
 ${bold("Examples:")}
   jk builds https://jenkins.example.com/job/MyProject/
   jk builds pipelines/MyProject/main --limit 10
-  jk builds --format xml pipelines/MyProject/main
-  jk builds --format json pipelines/MyProject/main
+  jk builds --xml pipelines/MyProject/main
+  jk builds --json pipelines/MyProject/main
   jk builds --urls pipelines/MyProject/main | head -1
 
 ${bold("Stdin Piping:")}
   echo "pipelines/MyProject/main" | jk builds
-  pbpaste | jk builds --format xml
+  pbpaste | jk builds --xml
   jk builds --urls <job> | xargs -I{} jk failures {}
 `);
 };
@@ -169,9 +172,8 @@ ${bold("Options:")}
   --tail <n>         Include last N lines of console output
   --grep <pattern>   Filter console output by pattern (case-insensitive)
   --smart            Smart mode: last 100 lines + all error/fail/exception lines
-  --format <type>    Output format: json or xml (recommended over --json/--xml)
-  --json             Output as JSON (legacy, prefer --format json)
-  --xml              Output as XML (legacy, prefer --format xml)
+  --xml              Output as XML (for LLM consumption)
+  --json             Output as JSON (for scripting/parsing)
   --verbose, -v      Show detailed error information
   --help, -h         Show this help
 
@@ -179,15 +181,15 @@ ${bold("Examples:")}
   jk failures pipelines/MyProject/main/123
   jk failures --shallow pipelines/MyProject/main/123
   jk failures --full pipelines/MyProject/main/123
-  jk failures --tail 200 --format xml pipelines/MyProject/main/123
-  jk failures --grep "ERROR|FATAL" --format xml pipelines/MyProject/main/123
-  jk failures --smart --format xml pipelines/MyProject/main/123
+  jk failures --tail 200 --xml pipelines/MyProject/main/123
+  jk failures --grep "ERROR|FATAL" --xml pipelines/MyProject/main/123
+  jk failures --smart --xml pipelines/MyProject/main/123
 
 ${bold("Stdin Piping:")}
   echo "123" | jk failures
-  echo "pipelines/MyProject/main/123" | jk failures --format xml
-  jk failures --format xml pipelines/MyProject/main/123 | pbcopy
-  pbpaste | jk failures --smart --format xml | pbcopy
+  echo "pipelines/MyProject/main/123" | jk failures --xml
+  jk failures --xml pipelines/MyProject/main/123 | pbcopy
+  pbpaste | jk failures --smart --xml | pbcopy
 
 ${bold("Console Output Modes:")}
   (none)             Show failure metadata only (no console output)
@@ -236,5 +238,54 @@ ${bold("Stdin Piping:")}
 ${bold("Tip:")}
   Run ${cyan("jk failures <build>")} to see all failed nodes with URLs,
   then copy-paste any URL directly into ${cyan("jk console <url>")}
+`);
+};
+
+const showWatchHelp = (): void => {
+  console.log(`
+${bold("jk watch")}
+
+Monitor one or more Jenkins pipelines for new failures.
+Sends system notifications when builds fail and displays a live status.
+
+${bold("Usage:")}
+  jk watch <pipeline>... [options]
+
+${bold("Options:")}
+  --interval N       Seconds between polls (default: 60, min: 10)
+  --limit N          Number of recent builds to check (default: 20)
+  --no-notify        Disable system notifications
+  --quiet            Minimal output (no status display)
+  --help, -h         Show this help
+
+${bold("Keyboard Controls:")}
+  ${cyan("c")}    Copy latest failure (smart XML) to clipboard
+  ${cyan("r")}    Refresh immediately
+  ${cyan("q")}    Quit
+
+${bold("Examples:")}
+  ${gray("# Watch a single pipeline:")}
+  jk watch https://jenkins.example.com/job/MyProject/job/main/
+
+  ${gray("# Watch multiple pipelines:")}
+  jk watch \\
+    https://jenkins.example.com/job/Canvas/job/main-postmerge/ \\
+    https://jenkins.example.com/job/Canvas/job/nightly/
+
+  ${gray("# Custom interval (30 seconds):")}
+  jk watch --interval 30 https://jenkins.example.com/job/MyProject/
+
+  ${gray("# Silent mode (notifications only):")}
+  jk watch --quiet https://jenkins.example.com/job/MyProject/
+
+${bold("Behavior:")}
+  - On startup, records the latest build ID for each pipeline
+  - Only alerts on NEW failures (builds that fail after watch starts)
+  - Press ${cyan("c")} to copy the latest failure's smart analysis to clipboard
+    (equivalent to ${cyan("jk failures --smart --xml")})
+
+${bold("Notifications:")}
+  - macOS: Native notifications via osascript (with sound)
+  - Linux: notify-send (requires libnotify)
 `);
 };

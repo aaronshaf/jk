@@ -170,8 +170,22 @@ export const formatBuildsXml = (builds: BuildSummary[]): string => {
 };
 
 /**
- * Format builds list as JSON
+ * Format builds list as JSON (flattened for easier consumption)
  */
 export const formatBuildsJson = (builds: BuildSummary[]): string => {
-  return JSON.stringify(builds, null, 2);
+  const flattened = builds.map((build) => ({
+    id: build.id,
+    result: build.result ?? null,
+    state: build.state,
+    startTime: build.startTime ?? null,
+    durationInMillis: build.durationInMillis ?? null,
+    runSummary: build.runSummary ?? null,
+    url: build._links.self.href,
+    changeSet: build.changeSet?.map((c) => ({
+      commitId: c.commitId,
+      message: c.msg,
+    })) ?? [],
+    causes: build.causes?.map((c) => c.shortDescription) ?? [],
+  }));
+  return JSON.stringify(flattened, null, 2);
 };

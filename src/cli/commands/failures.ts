@@ -6,6 +6,7 @@ import {
 } from "../formatters/failures.ts";
 import { formatFailuresXml } from "../formatters/xml.ts";
 import { red, gray } from "../formatters/colors.ts";
+import { EXIT_CODES, getExitCodeForError } from "../../lib/effects/exit-codes.ts";
 
 export interface FailuresOptions {
   full?: boolean;
@@ -124,8 +125,8 @@ export const failuresCommand = (
         return { ...failure, consoleOutput: processedOutput };
       });
 
-      // Determine output format (--format takes precedence over legacy --json/--xml)
-      const outputFormat = options.format ?? (options.xml ? "xml" : options.json ? "json" : "human");
+      // Determine output format (--format takes precedence, then --json/--xml flags)
+      const outputFormat = options.format ?? (options.json ? "json" : options.xml ? "xml" : "human");
 
       if (outputFormat === "xml") {
         console.log(formatFailuresXml(processedFailures, {
@@ -144,9 +145,9 @@ export const failuresCommand = (
         );
       }
 
-      // Exit with code 1 if there are any failures, 0 if no failures
+      // Exit with FAILURES_FOUND if there are any failures, SUCCESS if no failures
       if (processedFailures.length > 0) {
-        process.exit(1);
+        process.exit(EXIT_CODES.FAILURES_FOUND);
       }
     }),
     Effect.catchAll((error) =>
@@ -160,7 +161,8 @@ export const failuresCommand = (
             console.error(gray(`URL: ${error.url}`));
           }
         }
-        process.exit(1);
+        const exitCode = "_tag" in error ? getExitCodeForError(error) : EXIT_CODES.INTERNAL_ERROR;
+        process.exit(exitCode);
       })
     )
   );

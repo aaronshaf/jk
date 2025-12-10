@@ -2,6 +2,7 @@ import { Effect, pipe } from "effect";
 import type { BuildOperations } from "../../lib/jenkins/operations.ts";
 import { parseNodeUrl } from "../../lib/jenkins/locator.ts";
 import { red, gray } from "../formatters/colors.ts";
+import { EXIT_CODES, getExitCodeForError } from "../../lib/effects/exit-codes.ts";
 
 /**
  * Console command - get console output for a specific node
@@ -37,7 +38,8 @@ export const consoleCommand = (
               console.error(gray(`URL: ${error.url}`));
             }
           }
-          process.exit(1);
+          const exitCode = "_tag" in error ? getExitCodeForError(error) : EXIT_CODES.INTERNAL_ERROR;
+          process.exit(exitCode);
         })
       )
     );
@@ -61,7 +63,8 @@ export const consoleCommand = (
             console.error(gray(`URL: ${error.url}`));
           }
         }
-        process.exit(1);
+        const exitCode = "_tag" in error ? getExitCodeForError(error) : EXIT_CODES.INTERNAL_ERROR;
+        process.exit(exitCode);
       })
     )
   );

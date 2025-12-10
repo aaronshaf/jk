@@ -21,6 +21,9 @@ export interface ParsedArgs {
     limit?: number;
     urls?: boolean;
     format?: "json" | "xml";
+    interval?: number;
+    noNotify?: boolean;
+    quiet?: boolean;
   };
   stdin: string | null;
 }
@@ -85,6 +88,9 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
     limit: undefined as number | undefined,
     urls: false,
     format: undefined as "json" | "xml" | undefined,
+    interval: undefined as number | undefined,
+    noNotify: false,
+    quiet: false,
   };
 
   const positional: string[] = [];
@@ -152,6 +158,24 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
           flags.format = nextArg;
           i++; // Skip next arg
         }
+      } else if (flag === "interval") {
+        // Next arg should be a number (seconds)
+        const nextArg = rest[i + 1];
+        if (nextArg && !nextArg.startsWith("-")) {
+          const num = parseInt(nextArg, 10);
+          if (!isNaN(num) && num >= 10) {
+            flags.interval = num;
+            i++; // Skip next arg
+          } else if (!isNaN(num) && num < 10) {
+            console.warn("Warning: Minimum interval is 10 seconds");
+            flags.interval = 10;
+            i++;
+          }
+        }
+      } else if (flag === "no-notify") {
+        flags.noNotify = true;
+      } else if (flag === "quiet") {
+        flags.quiet = true;
       }
     } else if (arg.startsWith("-")) {
       // Short flags
