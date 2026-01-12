@@ -29,8 +29,8 @@
   "scripts": {
     "dev": "bun run src/index.ts",
     "build": "bun run build:cli && bun run build:lib && bun run build:types",
-    "build:cli": "bun build src/index.ts --outdir dist --target node --format esm",
-    "build:lib": "bun build src/lib/index.ts src/lib/jenkins/index.ts src/lib/config/index.ts src/lib/effects/index.ts --outdir dist/lib --target node --format esm --splitting",
+    "build:cli": "bun build src/index.ts --outdir dist --target bun --format esm",
+    "build:lib": "bun build src/lib/index.ts src/lib/jenkins/index.ts src/lib/config/index.ts src/lib/effects/index.ts --outdir dist/lib --target bun --format esm --splitting",
     "build:types": "tsup src/lib/index.ts src/lib/jenkins/index.ts src/lib/config/index.ts src/lib/effects/index.ts --dts-only --format esm --outDir dist/lib",
     "prepare-publish": "npm pkg set bin.jk=./dist/index.js && bun run typecheck && bun test && bun run build",
     "prepublishOnly": "bun run prepare-publish",
@@ -76,6 +76,7 @@
     "typescript": "^5.7.2"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.0.0",
+    "bun": ">=1.0.0"
   }
 }

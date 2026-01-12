@@ -3,6 +3,7 @@ import type { BuildOperations } from "../../lib/jenkins/operations.ts";
 import { formatDuration } from "../formatters/duration.ts";
 import { formatBuildNodesXml } from "../formatters/xml.ts";
 import { red, green, yellow, gray, bold } from "../formatters/colors.ts";
+import { getBuildStatusIcon } from "../formatters/icons.ts";
 import { EXIT_CODES, getExitCodeForError } from "../../lib/effects/exit-codes.ts";
 
 /**
@@ -34,14 +35,15 @@ export const buildCommand = (
       console.log(bold(`\nBuild Information:\n`));
 
       for (const node of nodes) {
+        const icon = getBuildStatusIcon(node.result);
         const statusIcon =
           node.result === "SUCCESS"
-            ? green("✓")
+            ? green(icon)
             : node.result === "FAILURE"
-              ? red("✗")
+              ? red(icon)
               : node.result === "UNSTABLE"
-                ? yellow("⚠")
-                : gray("○");
+                ? yellow(icon)
+                : gray(icon);
 
         const resultText =
           node.result === "SUCCESS"

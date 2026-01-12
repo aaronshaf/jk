@@ -3,6 +3,7 @@ import type { BuildOperations } from "../../lib/jenkins/operations.ts";
 import { formatDuration } from "../formatters/duration.ts";
 import { formatBuildsXml, formatBuildsJson } from "../formatters/xml.ts";
 import { red, green, yellow, gray, bold } from "../formatters/colors.ts";
+import { getBuildStatusIcon, ICON_ARROW_RIGHT } from "../formatters/icons.ts";
 import { EXIT_CODES, getExitCodeForError } from "../../lib/effects/exit-codes.ts";
 
 /**
@@ -59,14 +60,15 @@ export const buildsCommand = (
       console.log(bold(`\nRecent Builds:\n`));
 
       for (const build of builds) {
+        const icon = getBuildStatusIcon(build.result);
         const statusIcon =
           build.result === "SUCCESS"
-            ? green("✓")
+            ? green(icon)
             : build.result === "FAILURE"
-              ? red("✗")
+              ? red(icon)
               : build.result === "UNSTABLE"
-                ? yellow("⚠")
-                : gray("○");
+                ? yellow(icon)
+                : gray(icon);
 
         const resultText =
           build.result === "SUCCESS"
@@ -82,7 +84,7 @@ export const buildsCommand = (
           : "-";
 
         console.log(`  ${statusIcon} #${build.id}  ${resultText}  ${duration}`);
-        console.log(gray(`    → ${build._links.self.href}`));
+        console.log(gray(`    ${ICON_ARROW_RIGHT} ${build._links.self.href}`));
 
         if (options.verbose && build.changeSet?.length) {
           const commit = build.changeSet[0];
