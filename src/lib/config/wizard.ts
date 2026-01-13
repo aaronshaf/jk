@@ -3,6 +3,18 @@ import * as readline from "readline";
 import { createDefaultConfig, type Config } from "./schema.ts";
 import { writeConfig, getConfigPath } from "./manager.ts";
 import { ConfigError } from "../effects/errors.ts";
+import {
+  ICON_KEY,
+  ICON_KEYCAP_1,
+  ICON_KEYCAP_2,
+  ICON_KEYCAP_3,
+  ICON_KEYCAP_4,
+  ICON_KEYCAP_5,
+  ICON_KEYCAP_6,
+  ICON_SUCCESS,
+  ICON_CLIPBOARD,
+  ICON_WARNING_EMPHASIS,
+} from "../../cli/formatters/icons.ts";
 
 /**
  * Interactive setup wizard for Jenkins CLI configuration
@@ -80,14 +92,14 @@ const promptUsername = (): Effect.Effect<string, ConfigError> =>
  */
 const showApiTokenInstructions = (jenkinsUrl: string): Effect.Effect<void, never> =>
   Effect.gen(function* () {
-    yield* Console.log("\n🔑 Getting your Jenkins API token\n");
-    yield* Console.log("1️⃣  Go to your Jenkins instance:");
+    yield* Console.log(`\n${ICON_KEY} Getting your Jenkins API token\n`);
+    yield* Console.log(`${ICON_KEYCAP_1}  Go to your Jenkins instance:`);
     yield* Console.log(`   ${jenkinsUrl}`);
-    yield* Console.log("2️⃣  Click on your username in the upper right corner");
-    yield* Console.log("3️⃣  Click 'Configure' in the left sidebar");
-    yield* Console.log("4️⃣  Scroll down to the 'API Token' section");
-    yield* Console.log("5️⃣  Click 'Add new Token' and give it a name (e.g., 'jk-cli')");
-    yield* Console.log("6️⃣  Copy the generated token and paste it below\n");
+    yield* Console.log(`${ICON_KEYCAP_2}  Click on your username in the upper right corner`);
+    yield* Console.log(`${ICON_KEYCAP_3}  Click 'Configure' in the left sidebar`);
+    yield* Console.log(`${ICON_KEYCAP_4}  Scroll down to the 'API Token' section`);
+    yield* Console.log(`${ICON_KEYCAP_5}  Click 'Add new Token' and give it a name (e.g., 'jk-cli')`);
+    yield* Console.log(`${ICON_KEYCAP_6}  Copy the generated token and paste it below\n`);
   });
 
 /**
@@ -145,20 +157,20 @@ export const runSetupWizard = (): Effect.Effect<void, ConfigError> =>
       };
 
       yield* writeConfig(config);
-      yield* Console.log(`\n✓ Configuration saved to: ${getConfigPath()}\n`);
-      yield* Console.log("📋 Required Environment Variables\n");
+      yield* Console.log(`\n${ICON_SUCCESS} Configuration saved to: ${getConfigPath()}\n`);
+      yield* Console.log(`${ICON_CLIPBOARD} Required Environment Variables\n`);
       yield* Console.log("Add these to your shell profile (~/.bashrc, ~/.zshrc, etc.):\n");
       yield* Console.log("  export JENKINS_URL='https://jenkins.example.com'");
       yield* Console.log("  export JENKINS_USERNAME='your-username'");
       yield* Console.log("  export JENKINS_API_TOKEN='your-api-token'\n");
 
-      yield* Console.log("🔑 Getting your Jenkins API token\n");
-      yield* Console.log("1️⃣  Go to your Jenkins instance");
-      yield* Console.log("2️⃣  Click on your username in the upper right corner");
-      yield* Console.log("3️⃣  Click 'Configure' in the left sidebar");
-      yield* Console.log("4️⃣  Scroll down to the 'API Token' section");
-      yield* Console.log("5️⃣  Click 'Add new Token' and give it a name (e.g., 'jk-cli')");
-      yield* Console.log("6️⃣  Copy the generated token\n");
+      yield* Console.log(`${ICON_KEY} Getting your Jenkins API token\n`);
+      yield* Console.log(`${ICON_KEYCAP_1}  Go to your Jenkins instance`);
+      yield* Console.log(`${ICON_KEYCAP_2}  Click on your username in the upper right corner`);
+      yield* Console.log(`${ICON_KEYCAP_3}  Click 'Configure' in the left sidebar`);
+      yield* Console.log(`${ICON_KEYCAP_4}  Scroll down to the 'API Token' section`);
+      yield* Console.log(`${ICON_KEYCAP_5}  Click 'Add new Token' and give it a name (e.g., 'jk-cli')`);
+      yield* Console.log(`${ICON_KEYCAP_6}  Copy the generated token\n`);
 
       yield* Console.log("After setting environment variables, reload your shell:");
       yield* Console.log("  source ~/.zshrc  # or ~/.bashrc\n");
@@ -166,7 +178,7 @@ export const runSetupWizard = (): Effect.Effect<void, ConfigError> =>
       yield* Console.log("  jk build <your-build-url>\n");
     } else {
       // Config file - prompt for everything
-      yield* Console.log("\n⚠️  Warning: This will store credentials in plain text!");
+      yield* Console.log(`\n${ICON_WARNING_EMPHASIS}  Warning: This will store credentials in plain text!`);
       yield* Console.log("   Consider using environment variables instead.\n");
 
       const confirmed = yield* prompt("Continue with config file? (y/n): ");
@@ -182,7 +194,7 @@ export const runSetupWizard = (): Effect.Effect<void, ConfigError> =>
       const config = createDefaultConfig(jenkinsUrl, username, apiToken);
 
       yield* writeConfig(config);
-      yield* Console.log(`\n✓ Configuration saved to: ${getConfigPath()}`);
+      yield* Console.log(`\n${ICON_SUCCESS} Configuration saved to: ${getConfigPath()}`);
       yield* Console.log(
         "\nCredentials stored with secure file permissions (600)."
       );

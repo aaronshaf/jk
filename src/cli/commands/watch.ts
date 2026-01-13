@@ -7,6 +7,14 @@ import { notify } from "../../lib/platform/notifications.ts";
 import { copyToClipboard } from "../../lib/platform/clipboard.ts";
 import { formatFailuresXml } from "../formatters/xml.ts";
 import { red, green, yellow, gray, cyan, bold } from "../formatters/colors.ts";
+import {
+  ICON_ARROW_UP,
+  ICON_ARROW_DOWN,
+  ICON_ACTIVE,
+  ICON_FAILURE,
+  ICON_SUCCESS,
+  ICON_WARNING,
+} from "../formatters/icons.ts";
 
 // ANSI escape codes for cursor control
 const CURSOR_HOME = "\x1b[H";        // Move cursor to top-left
@@ -262,7 +270,7 @@ export const watchCommand = (
         lines.push(gray("Initializing..."));
       }
 
-      lines.push(gray(`[↑/↓] select | [c] copy | [r] refresh | [q] quit`));
+      lines.push(gray(`[${ICON_ARROW_UP}/${ICON_ARROW_DOWN}] select | [c] copy | [r] refresh | [q] quit`));
       lines.push("");
 
       // Show recent failures or status message
@@ -277,10 +285,10 @@ export const watchCommand = (
           const timeStr = buildTime ? gray(`${buildTime}  `) : "";
           const lineContent = `${failure.pipelineDisplayName} ${bold(`#${failure.build.id}`)}  ${timeStr}${gray(`"${commitMsg}"`)}`;
           lines.push(
-            `${prefix} ${red("●")} ${isSelected ? bold(lineContent) : lineContent}`
+            `${prefix} ${red(ICON_ACTIVE)} ${isSelected ? bold(lineContent) : lineContent}`
           );
           for (const nodeName of failure.failedNodes) {
-            lines.push(`    ${red("✗")} ${nodeName}`);
+            lines.push(`    ${red(ICON_FAILURE)} ${nodeName}`);
           }
         }
         lines.push(gray("─".repeat(60)));
@@ -448,15 +456,15 @@ export const watchCommand = (
 
         if (success) {
           console.log(
-            green(`✓ Copied failures for #${failure.build.id} to clipboard`)
+            green(`${ICON_SUCCESS} Copied failures for #${failure.build.id} to clipboard`)
           );
         } else {
           console.log(
-            yellow(`⚠ Could not copy to clipboard (xclip/pbcopy not available)`)
+            yellow(`${ICON_WARNING} Could not copy to clipboard (xclip/pbcopy not available)`)
           );
         }
       } catch {
-        console.log(red(`✗ Failed to fetch failure details`));
+        console.log(red(`${ICON_FAILURE} Failed to fetch failure details`));
       }
 
       // Re-render after a moment

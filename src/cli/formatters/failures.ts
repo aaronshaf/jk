@@ -1,5 +1,6 @@
 import type { FailureReport } from "../../lib/jenkins/schemas.ts";
 import { red, yellow, gray, bold } from "./colors.ts";
+import { ICON_FAILURE } from "./icons.ts";
 
 /**
  * Format failure reports for display
@@ -20,7 +21,7 @@ export const formatFailure = (
   const lines: string[] = [];
 
   // Display name and result
-  lines.push(`  ${red("✗")} ${bold(failure.displayName)} ${red("(FAILURE)")}`);
+  lines.push(`  ${red(ICON_FAILURE)} ${bold(failure.displayName)} ${red("(FAILURE)")}`);
 
   // Node URL
   lines.push(`     ${gray(failure.url)}`);
