@@ -2,6 +2,20 @@
 
 > Instructions for AI code assistants (Claude Code, GitHub Copilot, etc.)
 
+## Documentation
+
+For detailed product and architecture documentation, see:
+
+- **[docs/prd/](docs/prd/)** - Product Requirements Documents
+  - [overview.md](docs/prd/overview.md) - Goals, user personas, design decisions
+  - [architecture.md](docs/prd/architecture.md) - System design and data flow
+  - [commands.md](docs/prd/commands.md) - CLI command specifications
+  - [data-model.md](docs/prd/data-model.md) - Schemas and types
+
+- **[docs/adr/](docs/adr/)** - Architecture Decision Records
+  - Documents the "why" behind technical choices
+  - 15 ADRs covering Effect, Bun, security, XML output, etc.
+
 ## Project Overview
 
 **jk** is a fast, API-driven Jenkins CLI built with:
