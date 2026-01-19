@@ -77,7 +77,7 @@ export const buildsCommand = (
               ? red(build.result)
               : build.result === "UNSTABLE"
                 ? yellow(build.result)
-                : gray(build.state);
+                : gray(build.state ?? "UNKNOWN");
 
         const duration = build.durationInMillis
           ? formatDuration(build.durationInMillis)

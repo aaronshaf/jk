@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { Schema } from "effect";
-import { BuildSummarySchema } from "../src/lib/jenkins/schemas.ts";
+import { BuildNodeSchema, BuildSummarySchema } from "../src/lib/jenkins/schemas.ts";
 
 describe("BuildSummarySchema", () => {
   test("validates a complete build summary", () => {
@@ -58,5 +58,86 @@ describe("BuildSummarySchema", () => {
     const result = Schema.decodeUnknownSync(BuildSummarySchema)(data);
     expect(result.changeSet).toBeUndefined();
     expect(result.causes).toBeUndefined();
+  });
+
+  test("validates build with null state", () => {
+    const data = {
+      id: "200",
+      state: null,
+      result: "FAILURE",
+      _links: { self: { href: "/runs/200/" } },
+    };
+
+    const result = Schema.decodeUnknownSync(BuildSummarySchema)(data);
+    expect(result.id).toBe("200");
+    expect(result.state).toBeNull();
+    expect(result.result).toBe("FAILURE");
+  });
+});
+
+describe("BuildNodeSchema", () => {
+  test("validates a complete build node", () => {
+    const data = {
+      id: "1",
+      displayName: "Test Stage",
+      result: "SUCCESS",
+      state: "FINISHED",
+      startTime: "2025-11-25T04:53:00.870+0000",
+      durationInMillis: 5000,
+      actions: [],
+    };
+
+    const result = Schema.decodeUnknownSync(BuildNodeSchema)(data);
+    expect(result.id).toBe("1");
+    expect(result.displayName).toBe("Test Stage");
+    expect(result.result).toBe("SUCCESS");
+    expect(result.state).toBe("FINISHED");
+  });
+
+  test("validates build node with null state", () => {
+    const data = {
+      id: "5",
+      displayName: "Problematic Stage",
+      result: "FAILURE",
+      state: null,
+      actions: [],
+    };
+
+    const result = Schema.decodeUnknownSync(BuildNodeSchema)(data);
+    expect(result.id).toBe("5");
+    expect(result.displayName).toBe("Problematic Stage");
+    expect(result.state).toBeNull();
+    expect(result.result).toBe("FAILURE");
+  });
+
+  test("validates build node with null result and state", () => {
+    const data = {
+      id: "10",
+      displayName: "Queued Stage",
+      result: null,
+      state: null,
+      actions: [],
+    };
+
+    const result = Schema.decodeUnknownSync(BuildNodeSchema)(data);
+    expect(result.id).toBe("10");
+    expect(result.state).toBeNull();
+    expect(result.result).toBeNull();
+  });
+
+  test("validates build node with actions containing links", () => {
+    const data = {
+      id: "3",
+      displayName: "Stage with Sub-build",
+      state: "FINISHED",
+      result: "SUCCESS",
+      actions: [
+        { link: { href: "/blue/rest/organizations/jenkins/pipelines/sub-build/runs/123/" } },
+      ],
+    };
+
+    const result = Schema.decodeUnknownSync(BuildNodeSchema)(data);
+    expect(result.actions).toHaveLength(1);
+    expect(result.actions[0].link?.href).toContain("/runs/123/");
   });
 });

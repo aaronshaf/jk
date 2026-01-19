@@ -54,7 +54,7 @@ export const BuildNodeSchema = Schema.Struct({
   id: Schema.String,
   displayName: Schema.String,
   result: Schema.optional(Schema.NullOr(BuildResultSchema)),
-  state: BuildStateSchema,
+  state: Schema.NullOr(BuildStateSchema),
   startTime: Schema.optional(Schema.NullOr(Schema.String)),
   durationInMillis: Schema.optional(Schema.NullOr(Schema.Number)),
   actions: Schema.Array(ActionSchema),
@@ -125,7 +125,7 @@ export type JobInfo = Schema.Schema.Type<typeof JobInfoSchema>;
 export const BuildSummarySchema = Schema.Struct({
   id: Schema.String,
   result: Schema.optional(Schema.NullOr(BuildResultSchema)),
-  state: BuildStateSchema,
+  state: Schema.NullOr(BuildStateSchema),
   startTime: Schema.optional(Schema.NullOr(Schema.String)),
   durationInMillis: Schema.optional(Schema.NullOr(Schema.Number)),
   runSummary: Schema.optional(Schema.NullOr(Schema.String)),
@@ -146,7 +146,7 @@ export const BuildSummarySchema = Schema.Struct({
     Schema.Array(
       Schema.Struct({
         shortDescription: Schema.String,
-      })
+        })
     )
   ),
 });

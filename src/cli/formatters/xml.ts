@@ -30,7 +30,7 @@ export const formatBuildNodesXml = (nodes: BuildNode[]): string => {
     lines.push("    <node>");
     lines.push(`      <id>${escapeXml(node.id)}</id>`);
     lines.push(`      <displayName>${escapeXml(node.displayName)}</displayName>`);
-    lines.push(`      <state>${escapeXml(node.state)}</state>`);
+    lines.push(`      <state>${escapeXml(node.state ?? "UNKNOWN")}</state>`);
     if (node.result) {
       lines.push(`      <result>${escapeXml(node.result)}</result>`);
     }
@@ -144,7 +144,7 @@ export const formatBuildsXml = (builds: BuildSummary[]): string => {
     if (build.result) {
       lines.push(`    <result>${escapeXml(build.result)}</result>`);
     }
-    lines.push(`    <state>${escapeXml(build.state)}</state>`);
+    lines.push(`    <state>${escapeXml(build.state ?? "UNKNOWN")}</state>`);
     if (build.startTime) {
       lines.push(`    <startTime>${escapeXml(build.startTime)}</startTime>`);
     }

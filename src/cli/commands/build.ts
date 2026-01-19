@@ -52,13 +52,13 @@ export const buildCommand = (
               ? red(node.result)
               : node.result === "UNSTABLE"
                 ? yellow(node.result)
-                : gray(node.state);
+                : gray(node.state ?? "UNKNOWN");
 
         console.log(`  ${statusIcon} ${node.displayName} - ${resultText}`);
 
         if (options.verbose) {
           console.log(gray(`     ID: ${node.id}`));
-          console.log(gray(`     State: ${node.state}`));
+          console.log(gray(`     State: ${node.state ?? "UNKNOWN"}`));
           if (node.durationInMillis) {
             console.log(
               gray(`     Duration: ${formatDuration(node.durationInMillis)}`)
