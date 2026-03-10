@@ -170,6 +170,21 @@ export const formatBuildsXml = (builds: BuildSummary[]): string => {
 };
 
 /**
+ * Format build nodes as JSON
+ */
+export const formatBuildNodesJson = (nodes: BuildNode[]): string => {
+  const mapped = nodes.map((node) => ({
+    id: node.id,
+    displayName: node.displayName,
+    state: node.state ?? "UNKNOWN",
+    result: node.result ?? null,
+    startTime: node.startTime ?? null,
+    durationInMillis: node.durationInMillis ?? null,
+  }));
+  return JSON.stringify(mapped, null, 2);
+};
+
+/**
  * Format builds list as JSON (flattened for easier consumption)
  */
 export const formatBuildsJson = (builds: BuildSummary[]): string => {

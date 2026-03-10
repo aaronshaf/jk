@@ -1,7 +1,7 @@
 import { Effect, pipe } from "effect";
 import type { BuildOperations } from "../../lib/jenkins/operations.ts";
 import { formatDuration } from "../formatters/duration.ts";
-import { formatBuildNodesXml } from "../formatters/xml.ts";
+import { formatBuildNodesXml, formatBuildNodesJson } from "../formatters/xml.ts";
 import { red, green, yellow, gray, bold } from "../formatters/colors.ts";
 import { getBuildStatusIcon } from "../formatters/icons.ts";
 import { EXIT_CODES, getExitCodeForError } from "../../lib/effects/exit-codes.ts";
@@ -15,19 +15,30 @@ export const buildCommand = (
   options: {
     verbose?: boolean;
     xml?: boolean;
+    json?: boolean;
   }
 ): Effect.Effect<void, never> =>
   pipe(
     operations.getBuildNodes(locator),
     Effect.map((nodes) => {
       if (nodes.length === 0) {
-        console.log(options.xml ? formatBuildNodesXml([]) : yellow("No nodes found for this build."));
+        if (options.xml) {
+          console.log(formatBuildNodesXml([]));
+        } else if (options.json) {
+          console.log(formatBuildNodesJson([]));
+        } else {
+          console.log(yellow("No nodes found for this build."));
+        }
         return;
       }
 
-      // XML output
       if (options.xml) {
         console.log(formatBuildNodesXml(nodes));
+        return;
+      }
+
+      if (options.json) {
+        console.log(formatBuildNodesJson(nodes));
         return;
       }
 

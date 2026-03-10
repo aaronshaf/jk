@@ -11,7 +11,7 @@ export const retriggerCommand = (
   operations: BuildOperations,
   locator: string,
   stageName?: string,
-  options: { xml?: boolean; verbose?: boolean } = {}
+  options: { xml?: boolean; json?: boolean; verbose?: boolean } = {}
 ): Effect.Effect<void, never> =>
   pipe(
     operations.retriggerBuild(locator, stageName),
@@ -19,6 +19,8 @@ export const retriggerCommand = (
       if (options.xml) {
         console.log('<?xml version="1.0" encoding="UTF-8"?>');
         console.log('<result status="ok" action="retrigger"/>');
+      } else if (options.json) {
+        console.log(JSON.stringify({ status: "ok", action: "retrigger" }, null, 2));
       } else {
         console.log(green("✓ Retrigger queued"));
       }
@@ -30,6 +32,8 @@ export const retriggerCommand = (
           console.error(`<result status="error" action="retrigger">`);
           console.error(`  <message>${escapeXml(error.message)}</message>`);
           console.error(`</result>`);
+        } else if (options.json) {
+          console.error(JSON.stringify({ status: "error", action: "retrigger", message: error.message }, null, 2));
         } else {
           console.error(red(`Error: ${error.message}`));
           if (options.verbose) {

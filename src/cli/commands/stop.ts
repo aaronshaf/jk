@@ -10,7 +10,7 @@ import { getExitCodeForError } from "../../lib/effects/exit-codes.ts";
 export const stopCommand = (
   operations: BuildOperations,
   locator: string,
-  options: { xml?: boolean; verbose?: boolean } = {}
+  options: { xml?: boolean; json?: boolean; verbose?: boolean } = {}
 ): Effect.Effect<void, never> =>
   pipe(
     operations.stopBuild(locator),
@@ -18,6 +18,8 @@ export const stopCommand = (
       if (options.xml) {
         console.log('<?xml version="1.0" encoding="UTF-8"?>');
         console.log('<result status="ok" action="stop"/>');
+      } else if (options.json) {
+        console.log(JSON.stringify({ status: "ok", action: "stop" }, null, 2));
       } else {
         console.log(green("✓ Build stopped"));
       }
@@ -29,6 +31,8 @@ export const stopCommand = (
           console.error(`<result status="error" action="stop">`);
           console.error(`  <message>${escapeXml(error.message)}</message>`);
           console.error(`</result>`);
+        } else if (options.json) {
+          console.error(JSON.stringify({ status: "error", action: "stop", message: error.message }, null, 2));
         } else {
           console.error(red(`Error: ${error.message}`));
           if (options.verbose) {

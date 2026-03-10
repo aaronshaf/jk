@@ -66,6 +66,7 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
           {
             verbose: args.flags.verbose,
             xml: args.flags.xml,
+            json: args.flags.json,
           }
         );
       }
@@ -136,7 +137,7 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
           showHelp("stop");
           process.exit(1);
         }
-        return yield* stopCommand(operations, locator, { xml: args.flags.xml, verbose: args.flags.verbose });
+        return yield* stopCommand(operations, locator, { xml: args.flags.xml, json: args.flags.json, verbose: args.flags.verbose });
       }
 
       if (args.command === "retrigger") {
@@ -147,7 +148,7 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
           showHelp("retrigger");
           process.exit(1);
         }
-        return yield* retriggerCommand(operations, locator, args.flags.stage, { xml: args.flags.xml, verbose: args.flags.verbose });
+        return yield* retriggerCommand(operations, locator, args.flags.stage, { xml: args.flags.xml, json: args.flags.json, verbose: args.flags.verbose });
       }
 
       if (args.command === "watch") {
