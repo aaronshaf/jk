@@ -9,6 +9,8 @@ import { buildsCommand } from "./commands/builds.ts";
 import { failuresCommand } from "./commands/failures.ts";
 import { consoleCommand } from "./commands/console.ts";
 import { watchCommand } from "./commands/watch.ts";
+import { stopCommand } from "./commands/stop.ts";
+import { retriggerCommand } from "./commands/retrigger.ts";
 import { showHelp } from "./commands/help.ts";
 import { red } from "./formatters/colors.ts";
 import type { AppError } from "../lib/effects/errors.ts";
@@ -34,7 +36,9 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
     args.command === "builds" ||
     args.command === "failures" ||
     args.command === "console" ||
-    args.command === "watch"
+    args.command === "watch" ||
+    args.command === "stop" ||
+    args.command === "retrigger"
   ) {
     return Effect.gen(function* () {
       // Load config - let errors propagate
@@ -122,6 +126,28 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
           args.positional[1], // undefined if not provided
           args.flags.verbose ?? false
         );
+      }
+
+      if (args.command === "stop") {
+        const locator = args.positional[0] || stdinInput;
+        if (!locator) {
+          console.error(red("\nError: Missing required argument <build>\n"));
+          console.error(red("Provide via argument or pipe: echo 'build-url' | jk stop\n"));
+          showHelp("stop");
+          process.exit(1);
+        }
+        return yield* stopCommand(operations, locator, { xml: args.flags.xml, verbose: args.flags.verbose });
+      }
+
+      if (args.command === "retrigger") {
+        const locator = args.positional[0] || stdinInput;
+        if (!locator) {
+          console.error(red("\nError: Missing required argument <build>\n"));
+          console.error(red("Provide via argument or pipe: echo 'build-url' | jk retrigger\n"));
+          showHelp("retrigger");
+          process.exit(1);
+        }
+        return yield* retriggerCommand(operations, locator, args.flags.stage, { xml: args.flags.xml, verbose: args.flags.verbose });
       }
 
       if (args.command === "watch") {

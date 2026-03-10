@@ -8,7 +8,7 @@ import type { BuildNode, BuildSummary, FailureReport } from "../../lib/jenkins/s
 /**
  * Escape XML special characters
  */
-const escapeXml = (text: string): string => {
+export const escapeXml = (text: string): string => {
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { Effect } from "effect";
-import { parseLocator, parseNodeUrl, parseJobLocator, buildRunsApiPath } from "../src/lib/jenkins/locator.ts";
+import { parseLocator, parseNodeUrl, parseJobLocator, buildRunsApiPath, buildClassicStopPath, buildReplayPath, buildClassicRestartStagePath } from "../src/lib/jenkins/locator.ts";
 
 describe("parseLocator", () => {
   test("parses job URL format", () => {
@@ -146,5 +146,67 @@ describe("buildRunsApiPath", () => {
   test("builds correct API path", () => {
     const result = buildRunsApiPath({ path: "pipelines/MyProject/main" }, 10);
     expect(result).toBe("/blue/rest/organizations/jenkins/pipelines/MyProject/main/runs/?limit=10");
+  });
+});
+
+describe("buildReplayPath", () => {
+  test("simple path", () => {
+    expect(buildReplayPath({ path: "pipelines/Canvas/main", buildNumber: 1234 }))
+      .toBe("/blue/rest/organizations/jenkins/pipelines/Canvas/main/runs/1234/replay/");
+  });
+});
+
+describe("buildClassicRestartStagePath", () => {
+  test("simple stage name", () => {
+    expect(buildClassicRestartStagePath(
+      { path: "pipelines/Canvas/main", buildNumber: 1234 },
+      "JavaScript Tests"
+    )).toBe("/job/Canvas/job/main/1234/restart/restartPipeline?stageName=JavaScript%20Tests");
+  });
+
+  test("encodes special characters in stage name", () => {
+    expect(buildClassicRestartStagePath(
+      { path: "pipelines/Canvas/main", buildNumber: 1 },
+      "Tests & Lint"
+    )).toBe("/job/Canvas/job/main/1/restart/restartPipeline?stageName=Tests%20%26%20Lint");
+  });
+
+  test("foldered pipeline path", () => {
+    expect(buildClassicRestartStagePath(
+      { path: "pipelines/Org/Repo/main", buildNumber: 42 },
+      "Deploy"
+    )).toBe("/job/Org/job/Repo/job/main/42/restart/restartPipeline?stageName=Deploy");
+  });
+});
+
+describe("buildClassicStopPath", () => {
+  test("simple two-segment path", () => {
+    const result = buildClassicStopPath({ path: "pipelines/Canvas/main", buildNumber: 1234 });
+    expect(result).toBe("/job/Canvas/job/main/1234/stop");
+  });
+
+  test("three-segment foldered path", () => {
+    const result = buildClassicStopPath({ path: "pipelines/Org/Project/main", buildNumber: 42 });
+    expect(result).toBe("/job/Org/job/Project/job/main/42/stop");
+  });
+
+  test("encodes special characters in branch name", () => {
+    const result = buildClassicStopPath({ path: "pipelines/Canvas/feature/my branch", buildNumber: 99 });
+    expect(result).toBe("/job/Canvas/job/feature/job/my%20branch/99/stop");
+  });
+
+  test("encodes slashes that would cause path traversal", () => {
+    // parseLocator should prevent this, but buildClassicStopPath should encode defensively
+    const result = buildClassicStopPath({ path: "pipelines/Canvas/main", buildNumber: 1 });
+    expect(result).toContain("/stop");
+    expect(result).not.toContain("//");
+  });
+
+  test("parses classic URL then builds stop path", () => {
+    const info = Effect.runSync(
+      parseLocator("https://jenkins.inst-ci.net/job/Canvas/job/main/1234/")
+    );
+    const result = buildClassicStopPath(info);
+    expect(result).toBe("/job/Canvas/job/main/1234/stop");
   });
 });

@@ -16,6 +16,10 @@ export const showHelp = (command?: string): void => {
     showConsoleHelp();
   } else if (command === "watch") {
     showWatchHelp();
+  } else if (command === "stop") {
+    showStopHelp();
+  } else if (command === "retrigger") {
+    showRetriggerHelp();
   } else {
     showGeneralHelp();
   }
@@ -36,6 +40,8 @@ ${bold("Commands:")}
   ${cyan("console")} <build> <node-id>
                               Get console output for a specific node
   ${cyan("watch")} <pipeline>...      Monitor pipelines for new failures
+  ${cyan("stop")} <build>            Stop a running build
+  ${cyan("retrigger")} <build>       Replay a build (or restart from a stage)
   ${cyan("help")} [command]           Show help for a command
 
 ${bold("Global Options:")}
@@ -238,6 +244,57 @@ ${bold("Stdin Piping:")}
 ${bold("Tip:")}
   Run ${cyan("jk failures <build>")} to see all failed nodes with URLs,
   then copy-paste any URL directly into ${cyan("jk console <url>")}
+`);
+};
+
+const showStopHelp = (): void => {
+  console.log(`
+${bold("jk stop")}
+
+Stop a running Jenkins build.
+
+${bold("Usage:")}
+  jk stop <build>
+  echo <build> | jk stop
+
+${bold("Examples:")}
+  jk stop https://jenkins.inst-ci.net/job/Canvas/job/main/1234/
+  ger extract-url "build-summary-report" | tail -1 | jk stop
+
+${bold("Stdin Piping:")}
+  echo "pipelines/MyProject/main/123" | jk stop
+  pbpaste | jk stop
+`);
+};
+
+const showRetriggerHelp = (): void => {
+  console.log(`
+${bold("jk retrigger")}
+
+Replay a build with the same SCM revision and parameters,
+or restart a Declarative Pipeline from a specific stage.
+
+${bold("Usage:")}
+  jk retrigger <build>
+  jk retrigger --stage "Stage Name" <build>
+  echo <build> | jk retrigger
+
+${bold("Options:")}
+  --stage <name>     Restart from a named stage (Declarative Pipelines only)
+  --help, -h         Show this help
+
+${bold("Examples:")}
+  jk retrigger https://jenkins.inst-ci.net/job/Canvas/job/main/1234/
+  jk retrigger --stage "JavaScript Tests" https://jenkins.inst-ci.net/job/Canvas/job/main/1234/
+  ger extract-url "build-summary-report" | tail -1 | jk retrigger
+
+${bold("Stdin Piping:")}
+  echo "pipelines/MyProject/main/123" | jk retrigger
+  pbpaste | jk retrigger
+
+${bold("Notes:")}
+  --stage only works on Declarative Pipelines.
+  Use ${cyan("jk build <url>")} to see stage names in a build.
 `);
 };
 

@@ -237,6 +237,40 @@ export const parseJobLocator = (
 };
 
 /**
+ * Build the Blue Ocean API path to replay a whole build
+ */
+export const buildReplayPath = (info: PipelineInfo): string =>
+  `/blue/rest/organizations/jenkins/${info.path}/runs/${info.buildNumber}/replay/`;
+
+/**
+ * Build the classic Jenkins API path to restart from a specific stage
+ * Only works on Declarative Pipelines.
+ */
+export const buildClassicRestartStagePath = (
+  info: PipelineInfo,
+  stageName: string
+): string => {
+  const classicPath = info.path
+    .replace(/^pipelines\//, "")
+    .split("/")
+    .map((seg) => `job/${encodeURIComponent(seg)}`)
+    .join("/");
+  return `/${classicPath}/${info.buildNumber}/restart/restartPipeline?stageName=${encodeURIComponent(stageName)}`;
+};
+
+/**
+ * Build the classic Jenkins API path to stop a build
+ */
+export const buildClassicStopPath = (info: PipelineInfo): string => {
+  const classicPath = info.path
+    .replace(/^pipelines\//, "")
+    .split("/")
+    .map((seg) => `job/${encodeURIComponent(seg)}`)
+    .join("/");
+  return `/${classicPath}/${info.buildNumber}/stop`;
+};
+
+/**
  * Build the Blue Ocean API path for runs list
  */
 export const buildRunsApiPath = (jobInfo: JobInfo, limit: number): string => {

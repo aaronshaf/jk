@@ -24,6 +24,7 @@ export interface ParsedArgs {
     interval?: number;
     noNotify?: boolean;
     quiet?: boolean;
+    stage?: string;
   };
   stdin: string | null;
 }
@@ -72,7 +73,17 @@ export const readStdin = (): string | null => {
  * IMPORTANT: Also reads stdin synchronously at parse time to ensure it's available
  */
 export const parseArgs = (argv: string[]): ParsedArgs => {
-  const [command, ...rest] = argv;
+  // Determine if first arg is a command (doesn't start with -)
+  let command: string | undefined;
+  let rest: string[];
+
+  if (argv.length > 0 && !argv[0].startsWith("-")) {
+    command = argv[0];
+    rest = argv.slice(1);
+  } else {
+    command = undefined;
+    rest = argv;
+  }
 
   const flags = {
     verbose: false,
@@ -91,6 +102,7 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
     interval: undefined as number | undefined,
     noNotify: false,
     quiet: false,
+    stage: undefined as string | undefined,
   };
 
   const positional: string[] = [];
@@ -176,6 +188,12 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         flags.noNotify = true;
       } else if (flag === "quiet") {
         flags.quiet = true;
+      } else if (flag === "stage") {
+        const nextArg = rest[i + 1];
+        if (nextArg && !nextArg.startsWith("-")) {
+          flags.stage = nextArg;
+          i++;
+        }
       }
     } else if (arg.startsWith("-")) {
       // Short flags

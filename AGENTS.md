@@ -29,7 +29,7 @@ Inspired by prior CLI work done by Evan Battaglia.
 ### Core Philosophy
 
 1. **API-First**: Direct Jenkins Blue Ocean API calls for always-fresh data (no local state)
-2. **Read-Only**: Inspect builds, don't modify them (security by design)
+2. **Explicit Actions**: Write operations (`stop`, `retrigger`) are named commands — read commands never mutate state
 3. **Effect-First**: All operations use Effect for type-safe error handling
 4. **Human & LLM Outputs**: Colored terminal output by default, XML output (`--xml`) for LLMs
 5. **Security-Focused**: Path sanitization, input validation, secure credential storage
@@ -47,6 +47,8 @@ src/
 │   │   ├── build.ts             # Display build information
 │   │   ├── failures.ts          # Show failures (with --recursive for sub-builds)
 │   │   ├── console.ts           # Get console output (pipeable)
+│   │   ├── stop.ts              # Stop a running build
+│   │   ├── retrigger.ts         # Replay or restart-from-stage a build
 │   │   └── help.ts              # Help text
 │   └── formatters/              # Output formatting
 │       ├── colors.ts            # ANSI color codes

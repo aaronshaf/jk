@@ -1,8 +1,8 @@
-# ADR 0010: Read-Only API Design
+# ADR 0010: Write Operations Support
 
 ## Status
 
-Accepted
+Superseded (originally "Read-Only API Design", updated to allow write operations)
 
 ## Context
 
@@ -11,60 +11,43 @@ Jenkins API supports both read and write operations:
 - **Read**: Get builds, nodes, console output
 - **Write**: Trigger builds, cancel builds, replay
 
+The original decision was to be strictly read-only. As the tool matured,
+write operations (stop, retrigger) became clearly valuable for the primary
+developer workflow of investigating and recovering from failed builds.
+
 ## Decision
 
-jk is strictly read-only. No write operations to Jenkins are supported.
+jk supports both read and write operations. Write commands are explicit
+named operations (`stop`, `retrigger`) and do not modify read command behavior.
 
 ## Rationale
 
-- **Security**: Read-only API token sufficient, reduces blast radius
-- **Safety**: No accidental build triggers or cancellations
-- **Simplicity**: Simpler security model, fewer edge cases
-- **Use case**: Primary goal is inspection, not management
-- **Auditability**: No actions that need to be logged
+- **Workflow completeness**: Stopping a runaway build or replaying a failure
+  are natural follow-ons to inspecting it — forcing a context switch to the
+  browser adds friction
+- **Explicit safety**: Write operations require an explicit command name;
+  no read command can accidentally trigger a write
+- **API token scope**: Users whose tokens are read-only will get a clear
+  auth error; the tool does not require write access for read commands
 
 ## Consequences
 
 ### Positive
-- Can use read-only API tokens
-- No risk of accidental destructive actions
-- Simpler error handling (no write conflicts)
-- Clear, focused purpose
+- Full inspect-and-act workflow without leaving the terminal
+- `stop` and `retrigger` compose naturally with stdin piping
 
 ### Negative
-- Cannot trigger rebuilds from CLI
-- Cannot cancel running builds
-- Need separate tool for write operations
+- API tokens need write permissions for write commands
+- Risk of accidental build cancellation/replay (mitigated by explicit command names)
 
-## Supported Operations (All Read-Only)
+## Supported Operations
 
-| Command | Operation |
-|---------|-----------|
-| `build` | GET build information and nodes |
-| `builds` | GET recent builds for a job |
-| `failures` | GET failed nodes with console output |
-| `console` | GET console output for a node |
-| `watch` | GET polling for new failures |
-
-## API Token Requirements
-
-Jenkins allows creating tokens with limited permissions. For jk:
-
-1. Go to Jenkins > User > Configure > API Token
-2. Generate token with **read-only** permissions
-3. Use with jk (sufficient for all operations)
-
-```bash
-# All these only require read access
-jk build <url>
-jk failures --smart --xml <url>
-jk console <node-url>
-jk watch <job-url>
-```
-
-## Future Considerations
-
-If write operations are ever needed, they should be:
-1. In a separate tool or explicit opt-in
-2. Require confirmation for destructive actions
-3. Use separate API token with write permissions
+| Command | Operation | Type |
+|---------|-----------|------|
+| `build` | GET build information and nodes | Read |
+| `builds` | GET recent builds for a job | Read |
+| `failures` | GET failed nodes with console output | Read |
+| `console` | GET console output for a node | Read |
+| `watch` | GET polling for new failures | Read |
+| `stop` | POST stop a running build | Write |
+| `retrigger` | POST replay a build or restart from a stage | Write |

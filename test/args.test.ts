@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { ParsedArgs } from "../src/cli/args.ts";
+import { parseArgs, type ParsedArgs } from "../src/cli/args.ts";
 
 /**
  * Tests for argument parsing
@@ -81,6 +81,90 @@ describe("ParsedArgs interface", () => {
     expect(parsed.flags.grep).toBe("ERROR");
     expect(parsed.flags.smart).toBe(true);
     expect(parsed.stdin).toBe(null);
+  });
+});
+
+/**
+ * Command vs Flag Detection
+ *
+ * Tests that parseArgs correctly identifies when the first argument is a command
+ * vs when it's a flag (which means no explicit command was provided).
+ */
+
+describe("parseArgs command detection", () => {
+  test("treats first arg as command when it doesn't start with -", () => {
+    const parsed = parseArgs(["build", "pipelines/MyProject/main/123"]);
+    expect(parsed.command).toBe("build");
+    expect(parsed.positional).toEqual(["pipelines/MyProject/main/123"]);
+    expect(parsed.flags.help).toBe(false);
+  });
+
+  test("defaults to help command when first arg is --help", () => {
+    const parsed = parseArgs(["--help"]);
+    expect(parsed.command).toBe("help");
+    expect(parsed.flags.help).toBe(true);
+    expect(parsed.positional).toEqual([]);
+  });
+
+  test("defaults to help command when first arg is -h", () => {
+    const parsed = parseArgs(["-h"]);
+    expect(parsed.command).toBe("help");
+    expect(parsed.flags.help).toBe(true);
+    expect(parsed.positional).toEqual([]);
+  });
+
+  test("defaults to help command when only flags are provided", () => {
+    const parsed = parseArgs(["--verbose", "--xml"]);
+    expect(parsed.command).toBe("help");
+    expect(parsed.flags.verbose).toBe(true);
+    expect(parsed.flags.xml).toBe(true);
+    expect(parsed.positional).toEqual([]);
+  });
+
+  test("defaults to help command when no args are provided", () => {
+    const parsed = parseArgs([]);
+    expect(parsed.command).toBe("help");
+    expect(parsed.positional).toEqual([]);
+  });
+
+  test("parses command with --help flag", () => {
+    const parsed = parseArgs(["build", "--help"]);
+    expect(parsed.command).toBe("build");
+    expect(parsed.flags.help).toBe(true);
+    expect(parsed.positional).toEqual([]);
+  });
+
+  test("parses command with positional args and flags", () => {
+    const parsed = parseArgs(["failures", "pipelines/MyProject/main/123", "--recursive", "--xml"]);
+    expect(parsed.command).toBe("failures");
+    expect(parsed.positional).toEqual(["pipelines/MyProject/main/123"]);
+    expect(parsed.flags.recursive).toBe(true);
+    expect(parsed.flags.xml).toBe(true);
+  });
+
+  test("parses --stage flag with value", () => {
+    const parsed = parseArgs(["retrigger", "--stage", "JavaScript Tests", "pipelines/Canvas/main/1234"]);
+    expect(parsed.command).toBe("retrigger");
+    expect(parsed.flags.stage).toBe("JavaScript Tests");
+    expect(parsed.positional).toEqual(["pipelines/Canvas/main/1234"]);
+  });
+
+  test("parses --stage flag before positional", () => {
+    const parsed = parseArgs(["retrigger", "--stage", "Deploy", "https://jenkins.example.com/job/Canvas/1234/"]);
+    expect(parsed.flags.stage).toBe("Deploy");
+    expect(parsed.positional).toEqual(["https://jenkins.example.com/job/Canvas/1234/"]);
+  });
+
+  test("--stage without value is ignored", () => {
+    const parsed = parseArgs(["retrigger", "--stage"]);
+    expect(parsed.flags.stage).toBeUndefined();
+  });
+
+  test("retrigger without --stage has no stage flag", () => {
+    const parsed = parseArgs(["retrigger", "pipelines/Canvas/main/1234"]);
+    expect(parsed.command).toBe("retrigger");
+    expect(parsed.flags.stage).toBeUndefined();
+    expect(parsed.positional).toEqual(["pipelines/Canvas/main/1234"]);
   });
 });
 

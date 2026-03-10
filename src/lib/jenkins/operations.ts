@@ -17,6 +17,9 @@ import {
   buildRunsApiPath,
   buildNodeConsoleApiPath,
   buildNodeWebUrl,
+  buildClassicStopPath,
+  buildReplayPath,
+  buildClassicRestartStagePath,
 } from "./locator.ts";
 import {
   BuildNotFoundError,
@@ -116,6 +119,33 @@ export interface BuildOperations {
     | NetworkError
     | AuthenticationError
     | ValidationError
+  >;
+
+  /**
+   * Stop a running build
+   */
+  readonly stopBuild: (
+    locator: string
+  ) => Effect.Effect<
+    void,
+    | InvalidLocatorError
+    | NetworkError
+    | AuthenticationError
+    | BuildNotFoundError
+  >;
+
+  /**
+   * Replay a build, or restart from a specific stage (Declarative only)
+   */
+  readonly retriggerBuild: (
+    locator: string,
+    stageName?: string
+  ) => Effect.Effect<
+    void,
+    | InvalidLocatorError
+    | NetworkError
+    | AuthenticationError
+    | BuildNotFoundError
   >;
 }
 
@@ -225,6 +255,48 @@ export const createBuildOperations = (
             Schema.Array(BuildSummarySchema)
           ),
           Effect.map((builds) => Array.from(builds))
+        )
+      )
+    ),
+
+  stopBuild: (locator: string) =>
+    pipe(
+      parseLocator(locator),
+      Effect.flatMap((info) =>
+        pipe(
+          client.post(buildClassicStopPath(info)),
+          Effect.mapError((e) =>
+            e._tag === "NetworkError" && e.statusCode === 404
+              ? new BuildNotFoundError({
+                  message: `Build not found: ${info.path}/${info.buildNumber}`,
+                  pipeline: info.path,
+                  buildNumber: info.buildNumber,
+                })
+              : e
+          )
+        )
+      )
+    ),
+
+  retriggerBuild: (locator: string, stageName?: string) =>
+    pipe(
+      parseLocator(locator),
+      Effect.flatMap((info) =>
+        pipe(
+          client.post(
+            stageName
+              ? buildClassicRestartStagePath(info, stageName)
+              : buildReplayPath(info)
+          ),
+          Effect.mapError((e) =>
+            e._tag === "NetworkError" && e.statusCode === 404
+              ? new BuildNotFoundError({
+                  message: `Build not found: ${info.path}/${info.buildNumber}`,
+                  pipeline: info.path,
+                  buildNumber: info.buildNumber,
+                })
+              : e
+          )
         )
       )
     ),

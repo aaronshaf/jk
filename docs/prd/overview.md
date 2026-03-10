@@ -2,7 +2,7 @@
 
 ## Overview
 
-`jk` is a fast, API-driven Jenkins CLI for inspecting builds and failures. It provides read-only access to Jenkins Blue Ocean API with LLM-friendly output formats.
+`jk` is a fast, API-driven Jenkins CLI for inspecting and managing builds. It uses the Jenkins Blue Ocean API with LLM-friendly output formats.
 
 ## Goals
 
@@ -15,7 +15,6 @@
 ## Non-Goals
 
 - Replace Jenkins web UI (use browser for complex navigation)
-- Write operations (no build triggers, cancellations, or modifications)
 - Support Jenkins versions without Blue Ocean plugin
 - Real-time streaming (polling-based watch instead)
 
@@ -55,6 +54,7 @@
 |----------|----------|
 | **Inspect** | `build`, `builds`, `failures`, `console` |
 | **Monitor** | `watch` |
+| **Control** | `stop`, `retrigger` |
 | **Setup** | `setup`, `help` |
 
 ## User Flows

@@ -38,6 +38,13 @@ export interface JenkinsHttpClient {
   readonly getText: (
     path: string
   ) => Effect.Effect<string, NetworkError | AuthenticationError>;
+
+  /**
+   * Make a POST request to Jenkins API
+   */
+  readonly post: (
+    path: string
+  ) => Effect.Effect<void, NetworkError | AuthenticationError>;
 }
 
 /**
@@ -68,6 +75,11 @@ export const createJenkinsClient = (
         string,
         NetworkError | AuthenticationError
       >,
+    post: (path: string) =>
+      makeRequest(config, path, "none", "POST") as Effect.Effect<
+        void,
+        NetworkError | AuthenticationError
+      >,
   });
 
 /**
@@ -85,7 +97,8 @@ const buildUrl = (config: Config, path: string): string => {
 const makeRequest = (
   config: Config,
   path: string,
-  responseType: "json" | "text"
+  responseType: "json" | "text" | "none",
+  method: "GET" | "POST" = "GET"
 ): Effect.Effect<unknown, NetworkError | AuthenticationError> =>
   Effect.gen(function* () {
     const url = buildUrl(config, path);
@@ -95,6 +108,10 @@ const makeRequest = (
       const response = yield* Effect.tryPromise({
         try: () =>
           fetch(url, {
+            method,
+            // POST requests use manual redirect so we can detect and reject
+            // 3xx responses — fetch would otherwise silently switch to GET
+            redirect: method === "POST" ? "manual" : "follow",
             headers: {
               Authorization: authHeader,
               Accept:
@@ -112,11 +129,38 @@ const makeRequest = (
           }),
       });
 
+      // For POST with manual redirect, check if Jenkins redirected to a login page
+      // (auth failure) or a build/result page (action accepted — classic Jenkins
+      // write endpoints respond with 302 after successfully performing the action).
+      if (method === "POST" && response.status >= 300 && response.status < 400) {
+        const location = response.headers.get("location") ?? "";
+        const isLoginRedirect = location.includes("/login") || location.includes("/signin");
+        if (isLoginRedirect) {
+          return yield* Effect.fail(
+            new AuthenticationError({
+              message: "Authentication failed: redirected to login page. Check your username and API token.",
+              url,
+            })
+          );
+        }
+        // Non-login redirect: action was accepted by Jenkins
+        return undefined;
+      }
+
       // Check for authentication errors
-      if (response.status === 401 || response.status === 403) {
+      if (response.status === 401) {
         return yield* Effect.fail(
           new AuthenticationError({
             message: "Authentication failed. Check your username and API token.",
+            url,
+          })
+        );
+      }
+
+      if (response.status === 403) {
+        return yield* Effect.fail(
+          new AuthenticationError({
+            message: "Permission denied. Your API token may not have write access.",
             url,
           })
         );
@@ -134,7 +178,9 @@ const makeRequest = (
       }
 
       // Parse response based on type
-      if (responseType === "json") {
+      if (responseType === "none") {
+        return undefined;
+      } else if (responseType === "json") {
         return yield* Effect.tryPromise({
           try: () => response.json(),
           catch: (error) =>

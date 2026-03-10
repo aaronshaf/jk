@@ -15,7 +15,7 @@ Records of significant architectural decisions with context and rationale. Each 
 | [0007](0007-recursive-sub-build-traversal.md) | Automatic sub-build traversal for failures |
 | [0008](0008-llm-friendly-xml-output.md) | `--xml` flag for LLM consumption |
 | [0009](0009-security-input-validation.md) | Path sanitization and input validation |
-| [0010](0010-read-only-api-design.md) | Read-only operations (no build triggers) |
+| [0010](0010-read-only-api-design.md) | Write operations support (stop, retrigger) |
 | [0011](0011-stdin-piping-support.md) | Stdin support for pipe-friendly CLI |
 | [0012](0012-watch-command-keyboard-controls.md) | Interactive keyboard controls in watch mode |
 | [0013](0013-cross-platform-notifications.md) | Native system notifications |
