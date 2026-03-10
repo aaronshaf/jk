@@ -1,5 +1,6 @@
-import { Schema, JSONSchema } from "effect";
+import { Effect, Schema, JSONSchema } from "effect";
 import { FailureReportSchema } from "../../lib/jenkins/schemas.ts";
+import { red } from "../formatters/colors.ts";
 
 /**
  * Output schemas matching what jk JSON formatters actually produce.
@@ -52,16 +53,23 @@ const ActionResultSchema = Schema.Union(
 );
 
 /**
- * Schema command - output JSON Schema for each command's --json output
+ * Schema command - output JSON Schema for each command's --json output.
+ * Note: `console` is excluded as it has no --json mode (outputs raw text).
+ * The `failures` schema uses $defs for the recursive subBuilds field.
  */
-export const schemaCommand = (): void => {
-  const schemas: Record<string, unknown> = {
-    build: JSONSchema.make(BuildNodeOutputSchema),
-    builds: JSONSchema.make(BuildsOutputSchema),
-    failures: JSONSchema.make(Schema.Array(FailureReportSchema)),
-    stop: JSONSchema.make(ActionResultSchema),
-    retrigger: JSONSchema.make(ActionResultSchema),
-    console: JSONSchema.make(Schema.String),
-  };
-  console.log(JSON.stringify(schemas, null, 2));
-};
+export const schemaCommand = (): Effect.Effect<void, never> =>
+  Effect.sync(() => {
+    try {
+      const schemas: Record<string, unknown> = {
+        build: JSONSchema.make(BuildNodeOutputSchema),
+        builds: JSONSchema.make(BuildsOutputSchema),
+        failures: JSONSchema.make(Schema.Array(FailureReportSchema)),
+        stop: JSONSchema.make(ActionResultSchema),
+        retrigger: JSONSchema.make(ActionResultSchema),
+      };
+      console.log(JSON.stringify(schemas, null, 2));
+    } catch (error) {
+      console.error(red(`Error generating schema: ${error}`));
+      process.exit(1);
+    }
+  });

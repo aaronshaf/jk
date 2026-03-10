@@ -26,7 +26,7 @@ export const formatBuildsJson = (builds: BuildSummary[]): string => {
   const flattened = builds.map((build) => ({
     id: build.id,
     result: build.result ?? null,
-    state: build.state,
+    state: build.state ?? null,
     startTime: build.startTime ?? null,
     durationInMillis: build.durationInMillis ?? null,
     runSummary: build.runSummary ?? null,

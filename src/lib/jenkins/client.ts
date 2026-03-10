@@ -183,6 +183,7 @@ const makeRequest = (
 
       // Parse response based on type
       if (responseType === "none") {
+        // Action accepted with 200 (distinct from the redirect-accepted path above)
         return undefined;
       } else if (responseType === "json") {
         return yield* Effect.tryPromise({

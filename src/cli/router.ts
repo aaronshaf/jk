@@ -28,8 +28,7 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
 
   // Schema command - no config required
   if (args.command === "schema") {
-    schemaCommand();
-    return Effect.void;
+    return schemaCommand();
   }
 
   // Setup command doesn't require config

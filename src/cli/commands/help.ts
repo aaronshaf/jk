@@ -20,6 +20,8 @@ export const showHelp = (command?: string): void => {
     showStopHelp();
   } else if (command === "retrigger") {
     showRetriggerHelp();
+  } else if (command === "schema") {
+    showSchemaHelp();
   } else {
     showGeneralHelp();
   }
@@ -306,6 +308,21 @@ ${bold("Stdin Piping:")}
 ${bold("Notes:")}
   --stage only works on Declarative Pipelines.
   Use ${cyan("jk build <url>")} to see stage names in a build.
+`);
+};
+
+const showSchemaHelp = (): void => {
+  console.log(`
+${bold("jk schema")}
+
+Output JSON Schema (draft-07) for each command's ${cyan("--json")} output.
+
+${bold("Usage:")}
+  jk schema
+
+${bold("Notes:")}
+  The ${cyan("console")} command is excluded — it outputs raw text with no ${cyan("--json")} mode.
+  The ${cyan("failures")} schema uses $defs for the recursive subBuilds field.
 `);
 };
 
