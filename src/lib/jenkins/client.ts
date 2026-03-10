@@ -134,7 +134,9 @@ const makeRequest = (
       // write endpoints respond with 302 after successfully performing the action).
       if (method === "POST" && response.status >= 300 && response.status < 400) {
         const location = response.headers.get("location") ?? "";
-        const isLoginRedirect = location.includes("/login") || location.includes("/signin");
+        // Strip scheme+host to get just the path for matching
+        const locationPath = location.replace(/^https?:\/\/[^/]+/, "");
+        const isLoginRedirect = /^\/(login|signin)(\/|\?|$)/.test(locationPath);
         if (isLoginRedirect) {
           return yield* Effect.fail(
             new AuthenticationError({
@@ -160,7 +162,9 @@ const makeRequest = (
       if (response.status === 403) {
         return yield* Effect.fail(
           new AuthenticationError({
-            message: "Permission denied. Your API token may not have write access.",
+            message: method === "POST"
+              ? "Permission denied. Your API token may not have write access."
+              : "Permission denied. Check your API token permissions.",
             url,
           })
         );

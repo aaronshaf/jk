@@ -1,7 +1,8 @@
 import { Effect, pipe } from "effect";
 import type { BuildOperations } from "../../lib/jenkins/operations.ts";
 import { formatDuration } from "../formatters/duration.ts";
-import { formatBuildsXml, formatBuildsJson } from "../formatters/xml.ts";
+import { formatBuildsXml } from "../formatters/xml.ts";
+import { formatBuildsJson } from "../formatters/json.ts";
 import { red, green, yellow, gray, bold } from "../formatters/colors.ts";
 import { getBuildStatusIcon, ICON_ARROW_RIGHT } from "../formatters/icons.ts";
 import { EXIT_CODES, getExitCodeForError } from "../../lib/effects/exit-codes.ts";

@@ -113,6 +113,7 @@ ${bold("Usage:")}
 ${bold("Options:")}
   --verbose, -v      Show detailed node information
   --xml              Output as XML (for LLM consumption)
+  --json             Output as JSON
   --help, -h         Show this help
 
 ${bold("Examples:")}
@@ -257,6 +258,12 @@ ${bold("Usage:")}
   jk stop <build>
   echo <build> | jk stop
 
+${bold("Options:")}
+  --xml              Output result as XML
+  --json             Output result as JSON
+  --verbose, -v      Include URL and cause in error output
+  --help, -h         Show this help
+
 ${bold("Examples:")}
   jk stop https://jenkins.inst-ci.net/job/Canvas/job/main/1234/
   ger extract-url "build-summary-report" | tail -1 | jk stop
@@ -281,6 +288,9 @@ ${bold("Usage:")}
 
 ${bold("Options:")}
   --stage <name>     Restart from a named stage (Declarative Pipelines only)
+  --xml              Output result as XML
+  --json             Output result as JSON
+  --verbose, -v      Include URL and cause in error output
   --help, -h         Show this help
 
 ${bold("Examples:")}

@@ -33,7 +33,12 @@ export const retriggerCommand = (
           console.error(`  <message>${escapeXml(error.message)}</message>`);
           console.error(`</result>`);
         } else if (options.json) {
-          console.error(JSON.stringify({ status: "error", action: "retrigger", message: error.message }, null, 2));
+          const payload: Record<string, unknown> = { status: "error", action: "retrigger", message: error.message };
+          if (options.verbose) {
+            if ("url" in error && error.url) payload.url = error.url;
+            if ("cause" in error && error.cause) payload.cause = String(error.cause);
+          }
+          console.error(JSON.stringify(payload, null, 2));
         } else {
           console.error(red(`Error: ${error.message}`));
           if (options.verbose) {
