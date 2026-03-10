@@ -107,7 +107,11 @@ export const FailureReportSchema: Schema.Schema<FailureReport> = Schema.Struct({
   url: Schema.String,
   consoleOutput: Schema.optional(Schema.String),
   subBuilds: Schema.optional(
-    Schema.Array(Schema.suspend((): Schema.Schema<FailureReport> => FailureReportSchema))
+    Schema.Array(
+      Schema.suspend((): Schema.Schema<FailureReport> => FailureReportSchema).pipe(
+        Schema.annotations({ identifier: "FailureReport" })
+      )
+    )
   ),
 });
 

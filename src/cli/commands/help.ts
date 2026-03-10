@@ -42,6 +42,7 @@ ${bold("Commands:")}
   ${cyan("watch")} <pipeline>...      Monitor pipelines for new failures
   ${cyan("stop")} <build>            Stop a running build
   ${cyan("retrigger")} <build>       Replay a build (or restart from a stage)
+  ${cyan("schema")}                   Output JSON Schema for each command's --json output
   ${cyan("help")} [command]           Show help for a command
 
 ${bold("Global Options:")}

@@ -11,6 +11,7 @@ import { consoleCommand } from "./commands/console.ts";
 import { watchCommand } from "./commands/watch.ts";
 import { stopCommand } from "./commands/stop.ts";
 import { retriggerCommand } from "./commands/retrigger.ts";
+import { schemaCommand } from "./commands/schema.ts";
 import { showHelp } from "./commands/help.ts";
 import { red } from "./formatters/colors.ts";
 import type { AppError } from "../lib/effects/errors.ts";
@@ -22,6 +23,12 @@ export const routeCommand = (args: ParsedArgs): Effect.Effect<void, AppError> =>
   // Help flag or help command
   if (args.flags.help || args.command === "help") {
     showHelp(args.positional[0]);
+    return Effect.void;
+  }
+
+  // Schema command - no config required
+  if (args.command === "schema") {
+    schemaCommand();
     return Effect.void;
   }
 
